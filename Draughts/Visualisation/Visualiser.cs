@@ -168,7 +168,7 @@ namespace Draughts.Visualisation
             avaiablePositionMarginRatio = 0.33d;
 
         // Animation
-        public const double
+        public double
             animationSpeed = 5,
             animationUnitResolution = 50;
 
@@ -541,6 +541,10 @@ namespace Draughts.Visualisation
                     double ddx = dx / delta;
                     double ddy = dy / delta;
 
+                    if (i != 0)
+                    {
+                        Thread.Sleep(100);
+                    }
                     for (int j = 0; j < delta; j++)
                     {
                         movingPiecePosition = (movingPiecePosition.x + ddx, movingPiecePosition.y + ddy);
@@ -732,7 +736,7 @@ namespace Draughts.Visualisation
                     line.X1 = OffsetX + (from.column + 0.5d) * TileWidth;
                     line.Y1 = OffsetY + (from.row + 0.5d) * TileHeight;
 
-                    if (i != linesLastMove.Count - 1)
+                    if (i != linesLastMove.Count - 1 || movingPiece == null)
                     {
                         line.X2 = OffsetX + (to.column + 0.5d) * TileWidth;
                         line.Y2 = OffsetY + (to.row + 0.5d) * TileHeight;

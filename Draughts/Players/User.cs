@@ -9,24 +9,24 @@ using System.Threading.Tasks;
 
 namespace Draughts.Players
 {
-   public class User : Player
-   {
-      public User() : base()
-      {
-      }
-      public Visualiser visualiser { private get; set; }
+    public class User : Player
+    {
+        public User() : base()
+        {
+        }
+        public Visualiser visualiser { private get; set; }
 
 
-      public override Move MakeMove(BoardState boardState)
-      {
-         var moves = boardState.GetAvaiableMoves(Color);
+        public override Move MakeMove(BoardState boardState)
+        {
+            var moves = boardState.GetAvaiableMoves();
 
-         if (visualiser is null)
-         {
-            throw new InvalidOperationException("User needs visualiser to be able to make a move");
-         }
+            if (visualiser is null)
+            {
+                throw new InvalidOperationException("User needs visualiser to be able to make a move");
+            }
 
-         return visualiser.LetUserDoTheMove(moves);
-      }
-   }
+            return visualiser.LetUserDoTheMove(moves);
+        }
+    }
 }

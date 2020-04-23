@@ -22,7 +22,7 @@
 			<MenuItem Header="Test" Name="menu_test" Click="Menu_test_Click"/>
 		</Menu>
 
-		<ProgressBar Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="progressbar_bot" Value="50" />
+		<ProgressBar Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="progressbar_bot" Value="100" />
 
 		<Canvas Grid.Row="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Name="canvas_board" Background="White"/>
 

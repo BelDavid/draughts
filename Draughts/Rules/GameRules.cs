@@ -26,7 +26,7 @@ namespace Draughts.Rules
          this.numberOfColumns = numberOfColumns;
       }
 
-      public abstract List<Move> GetAvaiableMoves(BoardState state, PieceColor onMove);
+      public abstract List<Move> GetAvaiableMoves(BoardState state);
       public abstract BoardState GetInitialBoardState();
       public abstract Pieces.PieceColor GetStartingColor();
    }

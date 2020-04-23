@@ -25,7 +25,7 @@ namespace Draughts.Rules
        * King can jump to any place behind a piece, if none of those places lead to more jumping
       */
 
-      public override List<Move> GetAvaiableMoves(BoardState state, PieceColor onMove)
+      public override List<Move> GetAvaiableMoves(BoardState state)
       {
          var takingMovesWithKings = new List<Move>();
          var takingMovesWithMen = new List<Move>();
@@ -44,7 +44,7 @@ namespace Draughts.Rules
                }
 
                var color = GetColor(type);
-               if (color != onMove)
+               if (color != state.OnMove)
                {
                   continue;
                }
@@ -277,7 +277,7 @@ namespace Draughts.Rules
 
       private readonly int[] deltas = new int[2] { -1, 1 };
 
-      public override BoardState GetInitialBoardState() => new BoardState(this, initialOccupiedPlaces, initialPieceRanks, initialPieceColors);
+      public override BoardState GetInitialBoardState() => new BoardState(this, initialOccupiedPlaces, initialPieceRanks, initialPieceColors, GetStartingColor());
 
       // Initial board state acording to Czech rules
       public const ulong

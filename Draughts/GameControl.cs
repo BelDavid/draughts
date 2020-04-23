@@ -12,80 +12,126 @@ using System.Windows.Controls;
 
 namespace Draughts
 {
-   public class GameControl
-   {
-      private Visualiser visualiser;
-      private readonly Player[] players;
-      private readonly Thread gameThread;
+    public delegate GameControl GameControlFactory(PlayerFactory whitePlayerFactory, PlayerFactory blackPlayerFactory);
 
-      public readonly GameRules gameRules;
-      public readonly List<Move> MoveHistory = new List<Move>();
-      public BoardState CurrentBoardState { get; private set; }
-      public Player WhitePlayer { get; private set; }
-      public Player BlackPlayer { get; private set; }
+    public class GameControl
+    {
+        public const int MoveCountLimit = 200;
 
+        private Visualiser visualiser;
+        private readonly Player[] players;
+        private readonly Thread gameThread;
 
+        public readonly GameRules gameRules;
+        public readonly List<Move> MoveHistory = new List<Move>();
+        public BoardState CurrentBoardState { get; private set; }
+        public Player WhitePlayer { get; private set; }
+        public Player BlackPlayer { get; private set; }
 
-      public GameControl(RulesType rules, Player whitePlayer, Player blackPlayer)
-      {
+        public PieceColor WinnerColor { get; private set; } = PieceColor.None;
+        public bool IsRunning { get; private set; } = false;
+        public bool IsFinished { get; private set; } = false;
+        private object signaler = new object();
 
-         WhitePlayer = whitePlayer ?? throw new ArgumentNullException("Argument whitePlayer can not be null");
-         BlackPlayer = blackPlayer ?? throw new ArgumentNullException("Argument blackPlayer can not be null");
-
-         whitePlayer.Color = PieceColor.White;
-         blackPlayer.Color = PieceColor.Black;
-
-         gameRules = Utils.GetGameRules(rules);
-
-
-         players = gameRules.GetStartingColor() == PieceColor.White ?
-            new Player[] { whitePlayer, blackPlayer } :
-            new Player[] { blackPlayer, whitePlayer };
-
-         CurrentBoardState = gameRules.GetInitialBoardState();
-
-         gameThread = new Thread(Run);
-      }
-
-      public Visualiser GetVisualiser(Canvas canvasBoard)
-      {
-         if (visualiser == null)
-         {
-            visualiser = new Visualiser(canvasBoard, this);
-            visualiser.Refresh();
-         }
-         return visualiser;
-      }
-
-      public void Start()
-      {
-         gameThread.Start();
-      }
-      public void Stop()
-      {
-         gameThread.Abort();
-      }
-
-      public void Run()
-      {
-         for (int moveCount = 0; ; moveCount++)
-         {
-            var playerOnMove = players[moveCount % 2];
-
-            var move = playerOnMove.MakeMove(CurrentBoardState);
-            if (move != null)
+        public GameControl(RulesType rules, PlayerFactory whitePlayerFactory, PlayerFactory blackPlayerFactory)
+        {
+            if (whitePlayerFactory == null)
             {
-               CurrentBoardState = CurrentBoardState.ApplyMove(move);
-               MoveHistory.Add(move);
-
-               visualiser?.ApplyMove(move, !(playerOnMove is User));
+                throw new ArgumentNullException("Argument whitePlayerFactory can not be null");
             }
-            else
+            if (blackPlayerFactory == null)
             {
-               // TODO game is over
-               break;
+                throw new ArgumentNullException("Argument blackPlayerFactory can not be null");
             }
-         }
-      }
-   }
+
+            WhitePlayer = whitePlayerFactory() ?? throw new ArgumentNullException("WhitePlayer can not be null");
+            BlackPlayer = blackPlayerFactory() ?? throw new ArgumentNullException("BlackPlayer can not be null");
+
+            WhitePlayer.Setup(PieceColor.White, rules);
+            BlackPlayer.Setup(PieceColor.Black, rules);
+
+            gameRules = Utils.GetGameRules(rules);
+
+
+            players = gameRules.GetStartingColor() == PieceColor.White ?
+               new Player[] { WhitePlayer, BlackPlayer } :
+               new Player[] { BlackPlayer, WhitePlayer };
+
+            CurrentBoardState = gameRules.GetInitialBoardState();
+
+            gameThread = new Thread(() => Run());
+        }
+
+        public Visualiser GetVisualiser(Canvas canvasBoard)
+        {
+            if (visualiser == null)
+            {
+                visualiser = new Visualiser(canvasBoard, this);
+                visualiser.Refresh();
+            }
+            return visualiser;
+        }
+
+        public void Start()
+        {
+            gameThread.Start();
+        }
+        public void Stop()
+        {
+            gameThread.Abort();
+        }
+
+        public PieceColor Run()
+        {
+            lock (signaler)
+            {
+                IsRunning = true;
+            }
+
+            for (int moveCount = 0; ; moveCount++)
+            {
+                var playerOnMove = players[moveCount % 2];
+
+                if (moveCount >= MoveCountLimit)
+                {
+                    WinnerColor = PieceColor.None;
+                    break;
+                }
+
+                var move = playerOnMove.MakeMove(CurrentBoardState);
+                if (move != null)
+                {
+                    CurrentBoardState = CurrentBoardState.ApplyMove(move);
+                    MoveHistory.Add(move);
+
+                    visualiser?.ApplyMove(move, !(playerOnMove is User));
+                }
+                else
+                {
+                    WinnerColor = Utils.SwapColor(playerOnMove.Color);
+                    break;
+                }
+            }
+
+            lock (signaler)
+            {
+                IsRunning = false;
+                IsFinished = true;
+                Monitor.PulseAll(signaler);
+            }
+            return WinnerColor;
+        }
+
+        public PieceColor Await()
+        {
+            lock (signaler)
+            {
+                while (!IsFinished)
+                {
+                    Monitor.Wait(signaler);
+                }
+                return WinnerColor;
+            }
+        }
+    }
 }
