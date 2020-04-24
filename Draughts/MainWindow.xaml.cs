@@ -31,15 +31,14 @@ namespace Draughts
         {
             InitializeComponent();
 
-            //gameControl = new GameControl(RulesType.Czech, PlayerFactories.UserFactory(), PlayerFactories.MinimaxBotFactory(6, BoardEvaluatorType.Basic, progressbar_bot));
-            //visualiser = gameControl.GetVisualiser(canvas_board);
+            //thread = new Thread(() => Simulate(
+            //    (wpf, bpf) => new GameControl(RulesType.Czech, wpf, bpf),
+            //    PlayerFactories.RandomizedBotFactory(),
+            //    PlayerFactories.MinimaxBotFactory(3, BoardEvaluatorType.Basic, progressbar_bot),
+            //    20
+            //));
 
-            thread = new Thread(() => Simulate(
-                (wpf, bpf) => new GameControl(RulesType.Czech, wpf, bpf),
-                PlayerFactories.MinimaxBotFactory(1, BoardEvaluatorType.Basic, progressbar_bot),
-                PlayerFactories.MinimaxBotFactory(3, BoardEvaluatorType.Basic, progressbar_bot),
-                10
-            ));
+            InitGame();
         }
 
         // Testing
@@ -48,6 +47,15 @@ namespace Draughts
 
         private Thread thread;
 
+        private void InitGame()
+        {
+            const int minimaxDepth = 7;
+            gameControl = Utils.rand.Next(2) == 0
+                ? new GameControl(RulesType.Czech, PlayerFactories.UserFactory(), PlayerFactories.MinimaxBotFactory(minimaxDepth, BoardEvaluatorType.Basic, progressbar_bot))
+                : new GameControl(RulesType.Czech, PlayerFactories.MinimaxBotFactory(minimaxDepth, BoardEvaluatorType.Basic, progressbar_bot), PlayerFactories.UserFactory());
+
+            visualiser = gameControl.GetVisualiser(canvas_board);
+        }
 
         private void Simulate(GameControlFactory gameControlFactory, PlayerFactory whitePlayerFactory, PlayerFactory blackPlayerFactory, int numberOfRuns)
         {
@@ -64,7 +72,7 @@ namespace Draughts
                 canvas_board.Dispatcher.Invoke(() =>
                 {
                     visualiser = gameControl.GetVisualiser(canvas_board);
-                    visualiser.animationSpeed = 10;
+                    visualiser.animationSpeed = 3;
                 });
 
                 var winner = gameControl.Run();
@@ -111,12 +119,13 @@ namespace Draughts
             Close();
         }
 
-        private void Menu_test_Click(object sender, RoutedEventArgs e)
+        private void Menu_new_Click(object sender, RoutedEventArgs e)
         {
-
+            InitGame();
+            gameControl?.Start();
         }
 
-        private void Menu_new_Click(object sender, RoutedEventArgs e)
+        private void Menu_log_Click(object sender, RoutedEventArgs e)
         {
 
         }

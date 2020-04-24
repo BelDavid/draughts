@@ -16,7 +16,7 @@ namespace Draughts
 
     public class GameControl
     {
-        public const int MoveCountLimit = 200;
+        public const int MoveCountLimit = 150;
 
         private Visualiser visualiser;
         private readonly Player[] players;

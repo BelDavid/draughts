@@ -20,14 +20,13 @@ namespace Draughts.Visualisation
         private readonly Canvas canvas;
         private readonly GameControl gameControl;
         private readonly PieceColor playersPerspective;
-        private BoardState boardState;
+        private BoardState boardState => gameControl.CurrentBoardState;
         public Visualiser(Canvas canvas, GameControl gameControl)
         {
             this.canvas = canvas ?? throw new ArgumentNullException("canvas can not be null");
             this.canvas.SizeChanged += Canvas_SizeChanged;
 
             this.gameControl = gameControl ?? throw new ArgumentNullException("gameControl can not be null");
-            boardState = gameControl.CurrentBoardState;
 
             var whiteUser = gameControl.WhitePlayer as User;
             var blackUser = gameControl.BlackPlayer as User;
@@ -536,7 +535,7 @@ namespace Draughts.Visualisation
                     double dx = correctedTo.column - correctedFrom.column;
                     double dy = correctedTo.row - correctedFrom.row;
 
-                    double delta = animationUnitResolution * distance;
+                    double delta = animationUnitResolution;// * distance;
 
                     double ddx = dx / delta;
                     double ddy = dy / delta;
@@ -621,6 +620,21 @@ namespace Draughts.Visualisation
 
                 });
             }
+
+#if DEBUG   // Consistency check
+            foreach (var (pos, pieceType) in boardState.IterateBoard())
+            {
+                if (pieceType == PieceType.None && piecesOnBoard[pos.column, pos.row] == null
+                    || pieceType == piecesOnBoard[pos.column, pos.row].pieceType)
+                {
+
+                }
+                else
+                {
+                    throw new Exception("Inconsistency found");
+                }
+            }
+#endif
         }
 
         private void Promote(PieceShape ps)
@@ -631,6 +645,7 @@ namespace Draughts.Visualisation
                 Fill = Brushes.Blue,
             };
             canvas.Children.Add(ps.crown);
+            ps.pieceType = PromoteToKing(ps.pieceType);
         }
 
         public (Position tilePos, bool isInBoard) MapMouseOnTile(double mouseX, double mouseY)
