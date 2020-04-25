@@ -621,7 +621,7 @@ namespace Draughts.Visualisation
                 });
             }
 
-#if DEBUG   // Consistency check
+#if true//DEBUG   // Consistency check
             foreach (var (pos, pieceType) in boardState.IterateBoard())
             {
                 if (pieceType == PieceType.None && piecesOnBoard[pos.column, pos.row] == null
@@ -905,6 +905,13 @@ namespace Draughts.Visualisation
                     {
                         canvas.Children.Remove(shape);
                     }
+                }
+            }
+            if (movingPiece != null)
+            {
+                foreach (var shape in movingPiece.AllShapes())
+                {
+                    canvas.Children.Remove(shape);
                 }
             }
 

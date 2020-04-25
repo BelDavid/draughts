@@ -10,7 +10,7 @@ namespace Draughts.Rules
 {
    public class CzechRules : GameRules
    {
-      public CzechRules() : base(8, 8)
+      public CzechRules() : base(RulesType.Czech, 8, 8)
       {
 
       }

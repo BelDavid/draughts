@@ -27,8 +27,9 @@ namespace Draughts.Players
         {
             double progress = 0d;
 
-            var move = Search(boardState, 0, ref progress, 100d).move;
+            var move = Search(boardState, 0, ref progress, 100d, new Dictionary<BoardState, FitMove>()).move;
 
+            System.Diagnostics.Debug.WriteLine($"progress = {progress}");
             return move;
         }
 
@@ -43,17 +44,29 @@ namespace Draughts.Players
             }
         }
 
-        private (double fit, Move move) Search(BoardState state, int depth, ref double progress, double progressChunk)
+        private FitMove Search(BoardState state, int depth, ref double progress, double progressDelta, Dictionary<BoardState, FitMove> cache)
         {
-            if (depth == maxDepth)
+            if (cache.ContainsKey(state))
             {
-                progress += progressChunk;
+                progress += progressDelta;
+
                 if (depth <= reportDepth)
                 {
                     ReportProgress(progress);
                 }
 
-                return (BoardEvaluator.Evaluate(state, evaluator, rules), null);
+                return cache[state];
+            }
+
+            if (depth == maxDepth)
+            {
+                progress += progressDelta;
+                if (depth <= reportDepth)
+                {
+                    ReportProgress(progress);
+                }
+
+                return new FitMove(BoardEvaluator.Evaluate(state, evaluator, rules), null);
             }
             else
             {
@@ -61,22 +74,28 @@ namespace Draughts.Players
 
                 if (moves == null || moves.Count == 0)
                 {
-                    return (state.OnMove == PieceColor.White ? double.MinValue : double.MaxValue, null);
+                    progress += progressDelta;
+                    return new FitMove(state.OnMove == PieceColor.White ? double.MinValue : double.MaxValue, null);
                 }
 
                 if (depth == 0 && moves.Count == 1)
                 {
-                    return (0, moves[0]);
+                    progress += progressDelta;
+                    return new FitMove(0, moves[0]);
                 }
 
-                var fmoves = new List<(double fit, Move move)>();
+                var fitmoves = new List<FitMove>();
+
                 foreach (var move in moves)
                 {
                     if (move != null)
                     {
                         var s = state.ApplyMove(move);
-                        (double f, Move m) = Search(s, depth + 1, ref progress, progressChunk / moves.Count);
-                        fmoves.Add((f, move));
+                        
+                        double fit = Search(s, depth + 1, ref progress, progressDelta / moves.Count, cache).fit;
+                        var fm = new FitMove(fit, move);
+                        
+                        fitmoves.Add(fm);
                     }
                 }
 
@@ -87,13 +106,28 @@ namespace Draughts.Players
 
                 var minmax =
                     state.OnMove == PieceColor.White
-                    ? fmoves.Max(fm => fm.fit)
-                    : fmoves.Min(fm => fm.fit);
+                    ? fitmoves.Max(fm => fm.fit)
+                    : fitmoves.Min(fm => fm.fit);
 
-                var candidates = from fm in fmoves where fm.fit >= minmax - .001d && fm.fit <= minmax + .001d select fm;
+                var candidates = from fm in fitmoves where fm.fit >= minmax - .001d && fm.fit <= minmax + .001d select fm;
 
-                // return random move from candidates
-                return candidates.ElementAt(Utils.rand.Next(candidates.Count()));
+                // random fitmove from candidates
+                var fitmove = candidates.ElementAt(Utils.rand.Next(candidates.Count()));
+                cache.Add(state, fitmove);
+                
+                return fitmove;
+            }
+        }
+
+        private struct FitMove
+        {
+            public double fit;
+            public Move move;
+
+            public FitMove(double fit, Move move)
+            {
+                this.fit = fit;
+                this.move = move;
             }
         }
     }

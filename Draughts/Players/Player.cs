@@ -20,7 +20,7 @@ namespace Draughts.Players
         {
             if (Color != PieceColor.None)
             {
-                throw new Exception("Already setup");
+                throw new Exception("Already set up");
             }
             if (color == PieceColor.None)
             {

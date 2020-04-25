@@ -206,11 +206,13 @@ namespace Draughts
 
         public override bool Equals(object obj)
         {
-            if (obj is BoardState bs)
-            {
-                return piecePresence == bs.piecePresence && pieceRanks == bs.pieceRanks && pieceColors == bs.pieceColors;
-            }
-            return false;
+            return obj is BoardState bs
+                ? piecePresence == bs.piecePresence
+                  && pieceRanks == bs.pieceRanks
+                  && pieceColors == bs.pieceColors
+                  && OnMove == bs.OnMove
+                  && rules.rulesType == bs.rules.rulesType
+                : false;
         }
 
         public static bool operator ==(BoardState bs0, BoardState bs1)
@@ -224,11 +226,11 @@ namespace Draughts
 
         public override int GetHashCode()
         {
-            uint mask = 0b_11111111_11111111_11111111_11111111;
+            ulong mask = 0b_11111111_11111111_11111111_11111111;
             return
-                (int)((piecePresence & mask) ^ piecePresence >> 32)
-              ^ (int)((pieceRanks    & mask) ^ pieceRanks    >> 32)
-              ^ (int)((pieceColors   & mask) ^ pieceColors   >> 32);
+                (int)(piecePresence & mask) ^ (int)(piecePresence >> 32)
+              ^ (int)(pieceRanks    & mask) ^ (int)(pieceRanks    >> 32)
+              ^ (int)(pieceColors   & mask) ^ (int)(pieceColors   >> 32);
         }
     }
 }
