@@ -34,7 +34,7 @@ namespace Draughts
             //thread = new Thread(() => Simulate(
             //    (wpf, bpf) => new GameControl(RulesType.Czech, wpf, bpf),
             //    PlayerFactories.RandomizedBotFactory(),
-            //    PlayerFactories.MinimaxBotFactory(3, BoardEvaluatorType.Basic, progressbar_bot),
+            //    PlayerFactories.MinimaxBotFactory(3, new BoardEvaluatorBasic(), progressbar_bot),
             //    20
             //));
 
@@ -49,8 +49,12 @@ namespace Draughts
 
         private void InitGame()
         {
+            gameControl?.Stop();
+            visualiser?.Dispose();
+
             const int minimaxDepth = 7;
-            gameControl = Utils.rand.Next(2) == 0
+            gameControl =
+                Utils.rand.Next(1) == 0
                 ? new GameControl(RulesType.Czech, new User(), new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot))
                 : new GameControl(RulesType.Czech, new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot), new User());
 
@@ -72,6 +76,7 @@ namespace Draughts
 
                 var gameControl = gameControlFactory(whitePlayer, blackPlayer);
 
+                Visualiser visualiser = null;
                 canvas_board.Dispatcher.Invoke(() =>
                 {
                     visualiser = gameControl.GetVisualiser(canvas_board);
@@ -79,6 +84,7 @@ namespace Draughts
                 });
 
                 var winner = gameControl.Run();
+                visualiser?.Dispose();
 
                 canvas_board.Dispatcher.Invoke(visualiser.Dispose);
 
@@ -125,7 +131,7 @@ namespace Draughts
         private void Menu_new_Click(object sender, RoutedEventArgs e)
         {
             InitGame();
-            gameControl?.Start();
+            gameControl.Start();
         }
 
         private void Menu_log_Click(object sender, RoutedEventArgs e)

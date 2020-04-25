@@ -43,9 +43,9 @@ namespace Draughts
 
             gameRules = Utils.GetGameRules(rules);
 
-            players = gameRules.GetStartingColor() == PieceColor.White ?
-               new Player[] { whitePlayer, blackPlayer } :
-               new Player[] { blackPlayer, whitePlayer };
+            players = gameRules.GetStartingColor() == PieceColor.White
+               ? new Player[] { whitePlayer, blackPlayer }
+               : new Player[] { blackPlayer, whitePlayer };
 
             CurrentBoardState = gameRules.GetInitialBoardState();
 
