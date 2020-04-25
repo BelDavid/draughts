@@ -27,9 +27,11 @@ namespace Draughts.Players
         {
             double progress = 0d;
 
-            var move = Search(boardState, 0, ref progress, 100d, new Dictionary<BoardState, FitMove>()).move;
+            var expandedStates = new Stack<BoardState>();
+            expandedStates.Push(boardState);
 
-            System.Diagnostics.Debug.WriteLine($"progress = {progress}");
+            var move = Search(boardState, 0, ref progress, 100d, new Dictionary<BoardState, FitMove>(), expandedStates).move;
+
             return move;
         }
 
@@ -44,7 +46,7 @@ namespace Draughts.Players
             }
         }
 
-        private FitMove Search(BoardState state, int depth, ref double progress, double progressDelta, Dictionary<BoardState, FitMove> cache)
+        private FitMove Search(BoardState state, int depth, ref double progress, double progressDelta, Dictionary<BoardState, FitMove> cache, Stack<BoardState> expandedStates)
         {
             if (cache.ContainsKey(state))
             {
@@ -70,6 +72,7 @@ namespace Draughts.Players
             }
             else
             {
+
                 var moves = state.GetAvaiableMoves();
 
                 if (moves == null || moves.Count == 0)
@@ -91,10 +94,19 @@ namespace Draughts.Players
                     if (move != null)
                     {
                         var s = state.ApplyMove(move);
-                        
-                        double fit = Search(s, depth + 1, ref progress, progressDelta / moves.Count, cache).fit;
+
+                        if (expandedStates.Contains(s))
+                        {
+                            continue;
+                        }
+
+                        expandedStates.Push(s);
+
+                        double fit = Search(s, depth + 1, ref progress, progressDelta / moves.Count, cache, expandedStates).fit;
+
+                        expandedStates.Pop();
                         var fm = new FitMove(fit, move);
-                        
+
                         fitmoves.Add(fm);
                     }
                 }
@@ -113,8 +125,9 @@ namespace Draughts.Players
 
                 // random fitmove from candidates
                 var fitmove = candidates.ElementAt(Utils.rand.Next(candidates.Count()));
-                cache.Add(state, fitmove);
                 
+                cache.Add(state, fitmove);
+
                 return fitmove;
             }
         }

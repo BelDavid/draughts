@@ -33,9 +33,9 @@ namespace Draughts
 
             //thread = new Thread(() => Simulate(
             //    (wpf, bpf) => new GameControl(RulesType.Czech, wpf, bpf),
-            //    PlayerFactories.RandomizedBotFactory(),
-            //    PlayerFactories.MinimaxBotFactory(3, new BoardEvaluatorBasic(), progressbar_bot),
-            //    20
+            //    PlayerFactories.MinimaxBotFactory(7, new BoardEvaluatorBasic(), progressbar_bot),
+            //    PlayerFactories.MinimaxBotFactory(7, new BoardEvaluatorBasic(), progressbar_bot),
+            //    10
             //));
 
             InitGame();
@@ -54,7 +54,7 @@ namespace Draughts
 
             const int minimaxDepth = 7;
             gameControl =
-                Utils.rand.Next(1) == 0
+                Utils.rand.Next(2) == 0
                 ? new GameControl(RulesType.Czech, new User(), new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot))
                 : new GameControl(RulesType.Czech, new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot), new User());
 
@@ -84,9 +84,10 @@ namespace Draughts
                 });
 
                 var winner = gameControl.Run();
-                visualiser?.Dispose();
 
-                canvas_board.Dispatcher.Invoke(visualiser.Dispose);
+                Thread.Sleep(2000);
+
+                visualiser?.Dispatcher.Invoke(visualiser.Dispose);
 
                 if (winner == PieceColor.White)
                 {

@@ -132,7 +132,7 @@ namespace Draughts
         /// </summary>
         /// <param name="move"></param>
         /// <returns></returns>
-        public BoardState ApplyMove(Move move) // TODO check if works
+        public BoardState ApplyMove(Move move) 
         { 
             var copy = this;
 #if DEBUG

@@ -11,6 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using static Draughts.Utils;
 
 namespace Draughts.Visualisation
@@ -147,6 +148,7 @@ namespace Draughts.Visualisation
             canvas.MouseDown += Canvas_MouseDown;
         }
 
+        public Dispatcher Dispatcher => canvas.Dispatcher;
         public VisualiserState State { get; private set; } = VisualiserState.Idle;
         public int Size { get; private set; } = 100;
         public int OffsetX { get; private set; } = 0;
@@ -621,7 +623,7 @@ namespace Draughts.Visualisation
                 });
             }
 
-#if true//DEBUG   // Consistency check
+#if DEBUG   // Consistency check
             foreach (var (pos, pieceType) in boardState.IterateBoard())
             {
                 if (pieceType == PieceType.None && piecesOnBoard[pos.column, pos.row] == null
