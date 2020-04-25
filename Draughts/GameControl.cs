@@ -12,7 +12,7 @@ using System.Windows.Controls;
 
 namespace Draughts
 {
-    public delegate GameControl GameControlFactory(PlayerFactory whitePlayerFactory, PlayerFactory blackPlayerFactory);
+    public delegate GameControl GameControlFactory(Player whitePlayer, Player blackPlayer);
 
     public class GameControl
     {
@@ -33,29 +33,19 @@ namespace Draughts
         public bool IsFinished { get; private set; } = false;
         private object signaler = new object();
 
-        public GameControl(RulesType rules, PlayerFactory whitePlayerFactory, PlayerFactory blackPlayerFactory)
+        public GameControl(RulesType rules, Player whitePlayer, Player blackPlayer)
         {
-            if (whitePlayerFactory == null)
-            {
-                throw new ArgumentNullException("Argument whitePlayerFactory can not be null");
-            }
-            if (blackPlayerFactory == null)
-            {
-                throw new ArgumentNullException("Argument blackPlayerFactory can not be null");
-            }
+            WhitePlayer = whitePlayer ?? throw new ArgumentNullException("WhitePlayer can not be null");
+            BlackPlayer = blackPlayer ?? throw new ArgumentNullException("BlackPlayer can not be null");
 
-            WhitePlayer = whitePlayerFactory() ?? throw new ArgumentNullException("WhitePlayer can not be null");
-            BlackPlayer = blackPlayerFactory() ?? throw new ArgumentNullException("BlackPlayer can not be null");
-
-            WhitePlayer.Setup(PieceColor.White, rules);
-            BlackPlayer.Setup(PieceColor.Black, rules);
+            whitePlayer.Setup(PieceColor.White, rules);
+            blackPlayer.Setup(PieceColor.Black, rules);
 
             gameRules = Utils.GetGameRules(rules);
 
-
             players = gameRules.GetStartingColor() == PieceColor.White ?
-               new Player[] { WhitePlayer, BlackPlayer } :
-               new Player[] { BlackPlayer, WhitePlayer };
+               new Player[] { whitePlayer, blackPlayer } :
+               new Player[] { blackPlayer, whitePlayer };
 
             CurrentBoardState = gameRules.GetInitialBoardState();
 

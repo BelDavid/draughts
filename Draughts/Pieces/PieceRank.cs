@@ -10,7 +10,7 @@ namespace Draughts.Pieces
    {
       None = 0b_000,
 
-      Man = 0b_100,
+      Man =  0b_100,
       King = 0b_110,
    }
 }

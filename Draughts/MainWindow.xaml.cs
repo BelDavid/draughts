@@ -51,8 +51,8 @@ namespace Draughts
         {
             const int minimaxDepth = 7;
             gameControl = Utils.rand.Next(2) == 0
-                ? new GameControl(RulesType.Czech, PlayerFactories.UserFactory(), PlayerFactories.MinimaxBotFactory(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot))
-                : new GameControl(RulesType.Czech, PlayerFactories.MinimaxBotFactory(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot), PlayerFactories.UserFactory());
+                ? new GameControl(RulesType.Czech, new User(), new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot))
+                : new GameControl(RulesType.Czech, new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot), new User());
 
             visualiser = gameControl.GetVisualiser(canvas_board);
         }
@@ -67,7 +67,10 @@ namespace Draughts
 
             for (int i = 0; i < numberOfRuns; i++)
             {
-                var gameControl = gameControlFactory(whitePlayerFactory, blackPlayerFactory);
+                var whitePlayer = whitePlayerFactory();
+                var blackPlayer = blackPlayerFactory();
+
+                var gameControl = gameControlFactory(whitePlayer, blackPlayer);
 
                 canvas_board.Dispatcher.Invoke(() =>
                 {
