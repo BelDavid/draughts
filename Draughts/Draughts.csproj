@@ -57,11 +57,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BoardEvaluators\BoardEvaluatorBasic.cs" />
+    <Compile Include="BoardEvaluators\BoardEvaluatorNeuralNetwork.cs" />
     <Compile Include="BoardState.cs" />
     <Compile Include="Move.cs" />
     <Compile Include="Pieces\PieceShape.cs" />
-    <Compile Include="Players\AI\BoardEvaluator.cs" />
-    <Compile Include="Players\AI\BoardEvaluatorType.cs" />
+    <Compile Include="BoardEvaluators\IBoardEvaluator.cs" />
     <Compile Include="Players\MinimaxBot.cs" />
     <Compile Include="Players\PlayerFactories.cs" />
     <Compile Include="Players\RandomizedBot.cs" />

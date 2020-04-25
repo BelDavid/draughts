@@ -1,6 +1,6 @@
 ﻿using Draughts.Pieces;
 using Draughts.Players;
-using Draughts.Players.AI;
+using Draughts.BoardEvaluators;
 using Draughts.Rules;
 using System;
 using System.Collections.Generic;
@@ -51,8 +51,8 @@ namespace Draughts
         {
             const int minimaxDepth = 7;
             gameControl = Utils.rand.Next(2) == 0
-                ? new GameControl(RulesType.Czech, PlayerFactories.UserFactory(), PlayerFactories.MinimaxBotFactory(minimaxDepth, BoardEvaluatorType.Basic, progressbar_bot))
-                : new GameControl(RulesType.Czech, PlayerFactories.MinimaxBotFactory(minimaxDepth, BoardEvaluatorType.Basic, progressbar_bot), PlayerFactories.UserFactory());
+                ? new GameControl(RulesType.Czech, PlayerFactories.UserFactory(), PlayerFactories.MinimaxBotFactory(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot))
+                : new GameControl(RulesType.Czech, PlayerFactories.MinimaxBotFactory(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot), PlayerFactories.UserFactory());
 
             visualiser = gameControl.GetVisualiser(canvas_board);
         }

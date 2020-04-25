@@ -1,4 +1,4 @@
-﻿using Draughts.Players.AI;
+﻿using Draughts.BoardEvaluators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +14,6 @@ namespace Draughts.Players
     {
         public static PlayerFactory UserFactory() => () => new User();
         public static PlayerFactory RandomizedBotFactory() => () => new RandomizedBot();
-        public static PlayerFactory MinimaxBotFactory(int depth, BoardEvaluatorType evaluator, ProgressBar progressBar) => () => new MinimaxBot(depth, evaluator, progressBar);
+        public static PlayerFactory MinimaxBotFactory(int depth, IBoardEvaluator evaluator, ProgressBar progressBar) => () => new MinimaxBot(depth, evaluator, progressBar);
     }
 }

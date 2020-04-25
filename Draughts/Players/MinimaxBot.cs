@@ -5,13 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using Draughts.Pieces;
-using Draughts.Players.AI;
+using Draughts.BoardEvaluators;
 
 namespace Draughts.Players
 {
     class MinimaxBot : Player
     {
-        public MinimaxBot(int maxDepth, BoardEvaluatorType evaluator, ProgressBar progressBar)
+        public MinimaxBot(int maxDepth, IBoardEvaluator evaluator, ProgressBar progressBar)
         {
             this.maxDepth = maxDepth;
             this.progressBar = progressBar;
@@ -21,7 +21,7 @@ namespace Draughts.Players
         private readonly int maxDepth;
         private readonly int reportDepth = 3;
         private readonly ProgressBar progressBar;
-        private readonly BoardEvaluatorType evaluator;
+        private readonly IBoardEvaluator evaluator;
 
         public override Move MakeMove(BoardState boardState)
         {
@@ -66,7 +66,7 @@ namespace Draughts.Players
                     ReportProgress(progress);
                 }
 
-                return new FitMove(BoardEvaluator.Evaluate(state, evaluator, rules), null);
+                return new FitMove(evaluator.Evaluate(state, rules), null);
             }
             else
             {
