@@ -31,14 +31,14 @@ namespace Draughts
         {
             InitializeComponent();
 
-            //thread = new Thread(() => Simulate(
-            //    (wpf, bpf) => new GameControl(RulesType.Czech, wpf, bpf),
-            //    PlayerFactories.MinimaxBotFactory(7, new BoardEvaluatorBasic(), progressbar_bot),
-            //    PlayerFactories.MinimaxBotFactory(7, new BoardEvaluatorBasic(), progressbar_bot),
-            //    10
-            //));
+            thread = new Thread(() => Simulate(
+                RulesType.Czech,
+                PlayerFactories.MinimaxBotFactory(7, new BoardEvaluatorBasic(), progressbar_bot),
+                PlayerFactories.MinimaxBotFactory(5, new BoardEvaluatorBasic(), progressbar_bot),
+                10
+            ));
 
-            InitGame();
+            //InitGame();
         }
 
         // Testing
@@ -49,8 +49,7 @@ namespace Draughts
 
         private void InitGame()
         {
-            gameControl?.Stop();
-            visualiser?.Dispose();
+            TerminateGame();
 
             const int minimaxDepth = 7;
             gameControl =
@@ -61,8 +60,23 @@ namespace Draughts
             visualiser = gameControl.GetVisualiser(canvas_board);
         }
 
-        private void Simulate(GameControlFactory gameControlFactory, PlayerFactory whitePlayerFactory, PlayerFactory blackPlayerFactory, int numberOfRuns)
+        private void TerminateGame()
         {
+            gameControl?.Stop();
+            gameControl = null;
+            if (visualiser != null)
+            {
+                if (!visualiser.IsDisposed)
+                {
+                    visualiser.Dispatcher.Invoke(visualiser.Dispose);
+                }
+                visualiser = null;
+            }
+        }
+
+        private void Simulate(RulesType rules, PlayerFactory whitePlayerFactory, PlayerFactory blackPlayerFactory, int numberOfRuns)
+        {
+            TerminateGame();
             Debug.WriteLine("Simulation started");
 
             int whiteWins = 0;
@@ -74,9 +88,8 @@ namespace Draughts
                 var whitePlayer = whitePlayerFactory();
                 var blackPlayer = blackPlayerFactory();
 
-                var gameControl = gameControlFactory(whitePlayer, blackPlayer);
+                gameControl = new GameControl(rules, whitePlayer, blackPlayer);
 
-                Visualiser visualiser = null;
                 canvas_board.Dispatcher.Invoke(() =>
                 {
                     visualiser = gameControl.GetVisualiser(canvas_board);
@@ -114,8 +127,7 @@ namespace Draughts
 
         private void MainWindow_Closed(object sender, EventArgs e)
         {
-            gameControl?.Stop();
-            thread?.Abort();
+            TerminateGame();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)

@@ -170,7 +170,7 @@ namespace Draughts.Visualisation
 
         // Animation
         public double
-            animationSpeed = 5,
+            animationSpeed = 1,
             animationUnitResolution = 50;
 
         // Const values of board of size 200

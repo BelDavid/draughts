@@ -30,7 +30,8 @@ namespace Draughts.Players
             var expandedStates = new Stack<BoardState>();
             expandedStates.Push(boardState);
 
-            var move = Search(boardState, 0, ref progress, 100d, new Dictionary<BoardState, FitMove>(), expandedStates).move;
+            var move = Search(boardState, 0, ref progress, 100d, new Dictionary<BoardState, FitMove>(), expandedStates, null).move;
+            //System.Diagnostics.Debug.WriteLine($"progressBar = {progress}");
 
             return move;
         }
@@ -46,8 +47,9 @@ namespace Draughts.Players
             }
         }
 
-        private FitMove Search(BoardState state, int depth, ref double progress, double progressDelta, Dictionary<BoardState, FitMove> cache, Stack<BoardState> expandedStates)
+        private FitMove Search(BoardState state, int depth, ref double progress, double progressDelta, Dictionary<BoardState, FitMove> cache, Stack<BoardState> expandedStates, double? bestFitOneUp)
         {
+            // Checking for cached values
             if (cache.ContainsKey(state))
             {
                 progress += progressDelta;
@@ -88,13 +90,16 @@ namespace Draughts.Players
                 }
 
                 var fitmoves = new List<FitMove>();
+                var bestFit = state.OnMove == PieceColor.White ? double.MinValue : double.MaxValue;
 
+                int i = 0;
                 foreach (var move in moves)
                 {
                     if (move != null)
                     {
                         var s = state.ApplyMove(move);
 
+                        // Cycle
                         if (expandedStates.Contains(s))
                         {
                             continue;
@@ -102,13 +107,37 @@ namespace Draughts.Players
 
                         expandedStates.Push(s);
 
-                        double fit = Search(s, depth + 1, ref progress, progressDelta / moves.Count, cache, expandedStates).fit;
+                        double fit = Search(s, depth + 1, ref progress, progressDelta / moves.Count, cache, expandedStates, bestFit).fit;
+
 
                         expandedStates.Pop();
                         var fm = new FitMove(fit, move);
 
                         fitmoves.Add(fm);
+
+
+                        // Alpha beta cutting
+                        if (state.OnMove == PieceColor.White && fit > bestFit)
+                        {
+                            bestFit = fit;
+                            if (bestFitOneUp != null && bestFit > bestFitOneUp)
+                            {
+                                progress += (moves.Count - i - 1) * progressDelta / moves.Count;
+                                break;
+                            }
+                        }
+                        else if (state.OnMove == PieceColor.Black && fit < bestFit)
+                        {
+                            bestFit = fit;
+                            if (bestFitOneUp != null && bestFit < bestFitOneUp)
+                            {
+                                progress += (moves.Count - i - 1) * progressDelta / moves.Count;
+                                break;
+                            }
+                        }
                     }
+
+                    i++;
                 }
 
                 if (depth == reportDepth)
@@ -123,9 +152,10 @@ namespace Draughts.Players
 
                 var candidates = from fm in fitmoves where fm.fit >= minmax - .001d && fm.fit <= minmax + .001d select fm;
 
-                // random fitmove from candidates
+                // Select random fitmove from candidates
                 var fitmove = candidates.ElementAt(Utils.rand.Next(candidates.Count()));
                 
+                // Caching
                 cache.Add(state, fitmove);
 
                 return fitmove;

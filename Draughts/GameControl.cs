@@ -12,8 +12,6 @@ using System.Windows.Controls;
 
 namespace Draughts
 {
-    public delegate GameControl GameControlFactory(Player whitePlayer, Player blackPlayer);
-
     public class GameControl
     {
         public const int MoveCountLimit = 150;
@@ -68,7 +66,9 @@ namespace Draughts
         }
         public void Stop()
         {
+            // TODO stop properly
             gameThread.Abort();
+            Thread.Sleep(1500);
         }
 
         public PieceColor Run()
