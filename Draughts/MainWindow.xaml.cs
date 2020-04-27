@@ -33,9 +33,9 @@ namespace Draughts
 
             //thread = new Thread(() => Simulate(
             //    RulesType.Czech,
-            //    PlayerFactories.MinimaxBotFactory(7, new BoardEvaluatorBasic(), progressbar_bot),
-            //    PlayerFactories.MinimaxBotFactory(5, new BoardEvaluatorBasic(), progressbar_bot),
-            //    10
+            //    PlayerFactories.MinimaxBotFactory(4, new BoardEvaluatorBasic(), null, false, false),
+            //    PlayerFactories.MinimaxBotFactory(4, new BoardEvaluatorBasic(), null, true, true),
+            //    100
             //));
 
             InitGame();
@@ -54,8 +54,8 @@ namespace Draughts
             const int minimaxDepth = 7;
             gameControl =
                 Utils.rand.Next(2) == 0
-                ? new GameControl(null, RulesType.Czech, new User(), new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot))
-                : new GameControl(null, RulesType.Czech, new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot), new User());
+                ? new GameControl(null, RulesType.Czech, new User(), new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot, true, true))
+                : new GameControl(null, RulesType.Czech, new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot, true, true), new User());
 
             visualiser = gameControl.GetVisualiser(canvas_board);
         }
@@ -87,11 +87,11 @@ namespace Draughts
 
                 gameControl = new GameControl($"simulation{i}", rules, whitePlayer, blackPlayer);
 
-                canvas_board.Dispatcher.Invoke(() =>
-                {
-                    visualiser = gameControl.GetVisualiser(canvas_board);
-                    visualiser.animationSpeed = 10;
-                });
+                //canvas_board.Dispatcher.Invoke(() =>
+                //{
+                //    visualiser = gameControl.GetVisualiser(canvas_board);
+                //    visualiser.animationSpeed = 10;
+                //});
 
                 var winner = gameControl.Run();
 

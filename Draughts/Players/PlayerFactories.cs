@@ -14,6 +14,7 @@ namespace Draughts.Players
     {
         public static PlayerFactory UserFactory() => () => new User();
         public static PlayerFactory RandomizedBotFactory() => () => new RandomizedBot();
-        public static PlayerFactory MinimaxBotFactory(int depth, IBoardEvaluator evaluator, ProgressBar progressBar) => () => new MinimaxBot(depth, evaluator, progressBar);
+        public static PlayerFactory MinimaxBotFactory(int depth, IBoardEvaluator evaluator, ProgressBar progressBar, bool allowCaching, bool allowAlphaBetaCutting) => 
+            () => new MinimaxBot(depth, evaluator, progressBar, allowCaching, allowAlphaBetaCutting);
     }
 }

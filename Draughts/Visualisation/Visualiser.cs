@@ -981,7 +981,7 @@ namespace Draughts.Visualisation
             canvas.SizeChanged -= Canvas_SizeChanged;
 
             State = VisualiserState.Disposed;
-            System.Diagnostics.Debug.WriteLine($"Visualiser {gameControl.gameId} Disposed");
+            //System.Diagnostics.Debug.WriteLine($"Visualiser {gameControl.gameId} Disposed");
         }
         private void RemovePieceFromBoard(Position pos)
         {

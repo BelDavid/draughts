@@ -123,7 +123,7 @@ namespace Draughts
                 visualiser?.Dispose();
             }
 
-            System.Diagnostics.Debug.WriteLine($"Game {gameId} Finished");
+            //System.Diagnostics.Debug.WriteLine($"Game {gameId} Finished");
             return WinnerColor;
         }
 

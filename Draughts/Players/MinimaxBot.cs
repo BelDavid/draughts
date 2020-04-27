@@ -11,16 +11,20 @@ namespace Draughts.Players
 {
     class MinimaxBot : Player
     {
-        public MinimaxBot(int maxDepth, IBoardEvaluator evaluator, ProgressBar progressBar)
+        public MinimaxBot(int maxDepth, IBoardEvaluator evaluator, ProgressBar progressBar, bool allowCaching, bool allowAlphaBetaCutting)
         {
             this.maxDepth = maxDepth;
             this.progressBar = progressBar;
+            this.allowCaching = allowCaching;
+            this.allowAlphaBetaCutting = allowAlphaBetaCutting;
             this.evaluator = evaluator;
         }
 
         private readonly int maxDepth;
         private readonly int reportDepth = 3;
         private readonly ProgressBar progressBar;
+        private readonly bool allowCaching;
+        private readonly bool allowAlphaBetaCutting;
         private readonly IBoardEvaluator evaluator;
 
         public override Move MakeMove(BoardState boardState)
@@ -30,10 +34,11 @@ namespace Draughts.Players
             var expandedStates = new Stack<BoardState>();
             expandedStates.Push(boardState);
 
-            var move = Search(boardState, 0, ref progress, 100d, new Dictionary<BoardState, FitMove>(), expandedStates, null).move;
+            var fitmove = Search(boardState, 0, ref progress, 100d, new Dictionary<BoardState, FitMove>(), expandedStates, null);
             //System.Diagnostics.Debug.WriteLine($"progressBar = {progress}");
+            //System.Diagnostics.Debug.WriteLine($"fit = {fitmove.fit}");
 
-            return move;
+            return fitmove.move;
         }
 
         private void ReportProgress(double progress)
@@ -50,7 +55,7 @@ namespace Draughts.Players
         private FitMove Search(BoardState state, int depth, ref double progress, double progressDelta, Dictionary<BoardState, FitMove> cache, Stack<BoardState> expandedStates, double? bestFitOneUp)
         {
             // Checking for cached values
-            if (cache.ContainsKey(state))
+            if (allowCaching && cache.ContainsKey(state))
             {
                 progress += progressDelta;
 
@@ -122,22 +127,25 @@ namespace Draughts.Players
 
 
                         // Alpha beta cutting
-                        if (state.OnMove == PieceColor.White && fit > bestFit)
+                        if (allowAlphaBetaCutting)
                         {
-                            bestFit = fit;
-                            if (bestFitOneUp != null && bestFit > bestFitOneUp)
+                            if (state.OnMove == PieceColor.White && fit > bestFit)
                             {
-                                progress += (moves.Count - i - 1) * progressDelta / moves.Count;
-                                break;
+                                bestFit = fit;
+                                if (bestFitOneUp != null && bestFit > bestFitOneUp)
+                                {
+                                    progress += (moves.Count - i - 1) * progressDelta / moves.Count;
+                                    break;
+                                }
                             }
-                        }
-                        else if (state.OnMove == PieceColor.Black && fit < bestFit)
-                        {
-                            bestFit = fit;
-                            if (bestFitOneUp != null && bestFit < bestFitOneUp)
+                            else if (state.OnMove == PieceColor.Black && fit < bestFit)
                             {
-                                progress += (moves.Count - i - 1) * progressDelta / moves.Count;
-                                break;
+                                bestFit = fit;
+                                if (bestFitOneUp != null && bestFit < bestFitOneUp)
+                                {
+                                    progress += (moves.Count - i - 1) * progressDelta / moves.Count;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -150,6 +158,10 @@ namespace Draughts.Players
                     ReportProgress(progress);
                 }
 
+                if (fitmoves.Count == 0)
+                {
+
+                }
 
                 var minmax =
                     state.OnMove == PieceColor.White
@@ -160,9 +172,12 @@ namespace Draughts.Players
 
                 // Select random fitmove from candidates
                 var fitmove = candidates.ElementAt(Utils.rand.Next(candidates.Count()));
-                
+
                 // Caching
-                cache.Add(state, fitmove);
+                if (allowCaching)
+                {
+                    cache.Add(state, fitmove);
+                }
 
                 return fitmove;
             }
