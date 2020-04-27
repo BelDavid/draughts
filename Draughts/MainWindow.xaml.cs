@@ -43,34 +43,39 @@ namespace Draughts
 
         // Testing
         private Visualiser visualiser;
-        private GameControl gameControl;
+        private List<GameControl> gameControls;
 
         private Thread thread;
 
         private void InitGame()
         {
             TerminateGame(false);
+            gameControls = new List<GameControl>();
 
-            const int minimaxDepth = 7;
-            gameControl =
-                Utils.rand.Next(2) == 0
-                ? new GameControl(null, RulesType.Czech, new User(), new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot))
-                : new GameControl(null, RulesType.Czech, new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot), new User());
-
-            visualiser = gameControl.GetVisualiser(canvas_board);
+            const int minimaxDepth = 10;
+            for (int i = 0; i < 32; i++)
+            {
+                var gameControl = new GameControl(null, RulesType.Czech, new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot), new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot));
+                gameControls.Add(gameControl);
+            }
+            visualiser = null; //gameControl.GetVisualiser(canvas_board);
         }
 
         private void TerminateGame(bool force)
         {
-            if (gameControl != null)
+            if (gameControls == null)
+            {
+                return;
+            }
+            foreach (var gameControl in gameControls)
             {
                 gameControl.Terminate(force, !force);
             }
             
-            gameControl = null;
+            gameControls = null;
             visualiser = null;
         }
-
+        /*
         private void Simulate(RulesType rules, PlayerFactory whitePlayerFactory, PlayerFactory blackPlayerFactory, int numberOfRuns)
         {
             TerminateGame(false);
@@ -121,7 +126,7 @@ namespace Draughts
             Debug.WriteLine($"#black wins = {blackWins}");
             Debug.WriteLine($"#ties = {tieCount}");
         }
-
+        */
         private void MainWindow_Closed(object sender, EventArgs e)
         {
             TerminateGame(true);
@@ -130,7 +135,10 @@ namespace Draughts
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            gameControl?.Start();
+            foreach (var gc in gameControls)
+            {
+                gc.Start();
+            }
             thread?.Start();
         }
 
@@ -142,7 +150,10 @@ namespace Draughts
         private void Menu_new_Click(object sender, RoutedEventArgs e)
         {
             InitGame();
-            gameControl.Start();
+            foreach (var gc in gameControls)
+            {
+                gc.Start();
+            }
         }
 
         private void Menu_log_Click(object sender, RoutedEventArgs e)
