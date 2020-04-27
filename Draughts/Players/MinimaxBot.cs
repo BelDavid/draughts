@@ -95,6 +95,11 @@ namespace Draughts.Players
                 int i = 0;
                 foreach (var move in moves)
                 {
+                    if (game.IsTerminated)
+                    {
+                        return new FitMove(0, null);
+                    }
+
                     if (move != null)
                     {
                         var s = state.ApplyMove(move);
@@ -144,6 +149,7 @@ namespace Draughts.Players
                 {
                     ReportProgress(progress);
                 }
+
 
                 var minmax =
                     state.OnMove == PieceColor.White

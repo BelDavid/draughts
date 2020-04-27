@@ -31,14 +31,14 @@ namespace Draughts
         {
             InitializeComponent();
 
-            thread = new Thread(() => Simulate(
-                RulesType.Czech,
-                PlayerFactories.MinimaxBotFactory(7, new BoardEvaluatorBasic(), progressbar_bot),
-                PlayerFactories.MinimaxBotFactory(5, new BoardEvaluatorBasic(), progressbar_bot),
-                10
-            ));
+            //thread = new Thread(() => Simulate(
+            //    RulesType.Czech,
+            //    PlayerFactories.MinimaxBotFactory(7, new BoardEvaluatorBasic(), progressbar_bot),
+            //    PlayerFactories.MinimaxBotFactory(5, new BoardEvaluatorBasic(), progressbar_bot),
+            //    10
+            //));
 
-            //InitGame();
+            InitGame();
         }
 
         // Testing
@@ -49,34 +49,31 @@ namespace Draughts
 
         private void InitGame()
         {
-            TerminateGame();
+            TerminateGame(false);
 
             const int minimaxDepth = 7;
             gameControl =
                 Utils.rand.Next(2) == 0
-                ? new GameControl(RulesType.Czech, new User(), new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot))
-                : new GameControl(RulesType.Czech, new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot), new User());
+                ? new GameControl(null, RulesType.Czech, new User(), new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot))
+                : new GameControl(null, RulesType.Czech, new MinimaxBot(minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot), new User());
 
             visualiser = gameControl.GetVisualiser(canvas_board);
         }
 
-        private void TerminateGame()
+        private void TerminateGame(bool force)
         {
-            gameControl?.Stop();
-            gameControl = null;
-            if (visualiser != null)
+            if (gameControl != null)
             {
-                if (!visualiser.IsDisposed)
-                {
-                    visualiser.Dispatcher.Invoke(visualiser.Dispose);
-                }
-                visualiser = null;
+                gameControl.Terminate(force, !force);
             }
+            
+            gameControl = null;
+            visualiser = null;
         }
 
         private void Simulate(RulesType rules, PlayerFactory whitePlayerFactory, PlayerFactory blackPlayerFactory, int numberOfRuns)
         {
-            TerminateGame();
+            TerminateGame(false);
             Debug.WriteLine("Simulation started");
 
             int whiteWins = 0;
@@ -88,19 +85,19 @@ namespace Draughts
                 var whitePlayer = whitePlayerFactory();
                 var blackPlayer = blackPlayerFactory();
 
-                gameControl = new GameControl(rules, whitePlayer, blackPlayer);
+                gameControl = new GameControl($"simulation{i}", rules, whitePlayer, blackPlayer);
 
                 canvas_board.Dispatcher.Invoke(() =>
                 {
                     visualiser = gameControl.GetVisualiser(canvas_board);
-                    visualiser.animationSpeed = 3;
+                    visualiser.animationSpeed = 10;
                 });
 
                 var winner = gameControl.Run();
 
                 Thread.Sleep(2000);
 
-                visualiser?.Dispatcher.Invoke(visualiser.Dispose);
+                visualiser?.Dispose();
 
                 if (winner == PieceColor.White)
                 {
@@ -127,7 +124,8 @@ namespace Draughts
 
         private void MainWindow_Closed(object sender, EventArgs e)
         {
-            TerminateGame();
+            TerminateGame(true);
+            thread?.Abort();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -149,7 +147,7 @@ namespace Draughts
 
         private void Menu_log_Click(object sender, RoutedEventArgs e)
         {
-
+            visualiser.Dispose();
         }
     }
 }

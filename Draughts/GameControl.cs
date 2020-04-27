@@ -22,22 +22,28 @@ namespace Draughts
 
         public readonly GameRules gameRules;
         public readonly List<Move> MoveHistory = new List<Move>();
+        public readonly string gameId;
+
         public BoardState CurrentBoardState { get; private set; }
         public Player WhitePlayer { get; private set; }
         public Player BlackPlayer { get; private set; }
 
         public PieceColor WinnerColor { get; private set; } = PieceColor.None;
         public bool IsRunning { get; private set; } = false;
+        public bool IsTerminated { get; private set; } = false;
         public bool IsFinished { get; private set; } = false;
-        private object signaler = new object();
 
-        public GameControl(RulesType rules, Player whitePlayer, Player blackPlayer)
+        private bool disposeVisualiserOnFinish = false;
+        private object signaler_run = new object();
+
+        public GameControl(string gameId, RulesType rules, Player whitePlayer, Player blackPlayer)
         {
+            this.gameId = gameId ?? string.Empty;
             WhitePlayer = whitePlayer ?? throw new ArgumentNullException("WhitePlayer can not be null");
             BlackPlayer = blackPlayer ?? throw new ArgumentNullException("BlackPlayer can not be null");
 
-            whitePlayer.Setup(PieceColor.White, rules);
-            blackPlayer.Setup(PieceColor.Black, rules);
+            whitePlayer.Setup(PieceColor.White, rules, this);
+            blackPlayer.Setup(PieceColor.Black, rules, this);
 
             gameRules = Utils.GetGameRules(rules);
 
@@ -57,6 +63,7 @@ namespace Draughts
                 visualiser = new Visualiser(canvasBoard, this);
                 visualiser.Refresh();
             }
+
             return visualiser;
         }
 
@@ -64,64 +71,77 @@ namespace Draughts
         {
             gameThread.Start();
         }
-        public void Stop()
+        public void Terminate(bool force, bool disposeVisualiserOnFinish)
         {
             // TODO stop properly
-            gameThread.Abort();
-            Thread.Sleep(1500);
+            IsTerminated = true;
+            if (force)
+            {
+                gameThread.Abort();
+            }
+
+            this.disposeVisualiserOnFinish = disposeVisualiserOnFinish;
+            visualiser?.TerminateGame();
         }
 
         public PieceColor Run()
         {
-            lock (signaler)
-            {
-                IsRunning = true;
-            }
+            IsRunning = true;
 
-            for (int moveCount = 0; ; moveCount++)
+            for (int moveCount = 0; moveCount < MoveCountLimit && !IsTerminated; moveCount++)
             {
                 var playerOnMove = players[moveCount % 2];
 
-                if (moveCount >= MoveCountLimit)
+                var move = playerOnMove.MakeMove(CurrentBoardState);
+                if (IsTerminated)
                 {
-                    WinnerColor = PieceColor.None;
                     break;
                 }
-
-                var move = playerOnMove.MakeMove(CurrentBoardState);
-                if (move != null)
+                else if (move != null)
                 {
                     CurrentBoardState = CurrentBoardState.ApplyMove(move);
                     MoveHistory.Add(move);
 
                     visualiser?.ApplyMove(move, !(playerOnMove is User));
                 }
-                else
+                else if (IsRunning)
                 {
                     WinnerColor = Utils.SwapColor(playerOnMove.Color);
                     break;
                 }
             }
 
-            lock (signaler)
+            lock (signaler_run)
             {
                 IsRunning = false;
                 IsFinished = true;
-                Monitor.PulseAll(signaler);
+                Monitor.PulseAll(signaler_run);
             }
+
+            if (disposeVisualiserOnFinish && (!visualiser?.IsDisposed ?? false))
+            {
+                visualiser?.Dispose();
+            }
+
+            System.Diagnostics.Debug.WriteLine($"Game {gameId} Finished");
             return WinnerColor;
         }
 
         public PieceColor Await()
         {
-            lock (signaler)
+            if (visualiser != null && visualiser.Dispatcher.Thread == Thread.CurrentThread)
+            {
+                throw new Exception("This method should not be called from visualiser's Dispatcher thread, since it can block the thread.");
+            }
+
+            lock (signaler_run)
             {
                 while (!IsFinished)
                 {
-                    Monitor.Wait(signaler);
+                    Monitor.Wait(signaler_run);
                 }
-                return WinnerColor;
             }
+            return WinnerColor;
         }
     }
 }

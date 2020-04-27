@@ -2,6 +2,7 @@
 using Draughts.Rules;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -135,35 +136,24 @@ namespace Draughts
         public BoardState ApplyMove(Move move) 
         { 
             var copy = this;
-#if DEBUG
-            if (move.path == null)
-            {
-                throw new ArgumentException("move.path can not be null");
-            }
-            if (move.path.Length < 2)
-            {
-                throw new ArgumentException("path length must be at least 2 long");
-            }
+
+            Debug.Assert(move.path != null, "move.path can not be null");
+
+            Debug.Assert(move.path.Length >= 2, "path length must be at least 2 long");
+
             var playerColor = GetColor(GetPieceType(move.path.First()));
-            if (playerColor != OnMove)
-            {
-                throw new ArgumentException($"{Enum.GetName(typeof(PieceColor), playerColor)} is not on move");
-            }
-            if ((from pos in move.path.Skip(1)
-                 where copy.GetPieceType(pos) != PieceType.None
-                 select pos).Any())
-            {
-                throw new ArgumentException("can not jump to non-empty position");
-            }
-            if (move.positionsOfTakenPieces != null
-                && (from pos in move.positionsOfTakenPieces
-                    let pieceT = copy.GetPieceType(pos)
-                    where pieceT == PieceType.None || GetColor(pieceT) == playerColor
-                    select pos).Any())
-            {
-                throw new ArgumentException("can not take empty place, or your own piece");
-            }
-#endif
+            Debug.Assert(playerColor == OnMove, $"{Enum.GetName(typeof(PieceColor), playerColor)} is not on move");
+
+            Debug.Assert(!(from pos in move.path.Skip(1)
+                           where copy.GetPieceType(pos) != PieceType.None
+                           select pos).Any(), "can not jump to non-empty position");
+
+            Debug.Assert(!(move.positionsOfTakenPieces != null
+                         && (from pos in move.positionsOfTakenPieces
+                             let pieceT = copy.GetPieceType(pos)
+                             where pieceT == PieceType.None || GetColor(pieceT) == playerColor
+                             select pos).Any()), "can not take empty place, or your own piece");
+            
 
             var pieceType = GetPieceType(move.path.First());
             if (move.promotion != -1)

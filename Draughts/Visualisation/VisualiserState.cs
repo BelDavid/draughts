@@ -11,5 +11,7 @@ namespace Draughts.Visualisation
       Idle,
       UserMove,
       Animating,
+      Terminating,
+      Disposed,
    }
 }

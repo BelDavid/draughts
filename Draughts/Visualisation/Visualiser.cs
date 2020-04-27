@@ -158,7 +158,7 @@ namespace Draughts.Visualisation
         public double Multiplier { get; private set; } = 1;
         public byte NumberOfColumns => gameControl.gameRules.numberOfColumns;
         public byte NumberOfRows => gameControl.gameRules.numberOfRows;
-        public bool IsDisposed { get; private set; } = false;
+        public bool IsDisposed => State == VisualiserState.Disposed;
 
 
         // Margin ratios
@@ -170,8 +170,8 @@ namespace Draughts.Visualisation
 
         // Animation
         public double
-            animationSpeed = 1,
-            animationUnitResolution = 50;
+            animationSpeed = 5,
+            animationUnitResolution = 40;
 
         // Const values of board of size 200
         public const double
@@ -206,7 +206,7 @@ namespace Draughts.Visualisation
 
         private Move userSelectedMove;
         private bool userMoveReadyToReturn = false;
-        private readonly object signaler = new object();
+        private readonly object signaler_userMove = new object();
 
         // Last Move
         private Move lastMove;
@@ -424,11 +424,11 @@ namespace Draughts.Visualisation
         {
             Deselect();
 
-            lock (signaler)
+            lock (signaler_userMove)
             {
                 userSelectedMove = move;
                 userMoveReadyToReturn = true;
-                Monitor.PulseAll(signaler);
+                Monitor.PulseAll(signaler_userMove);
             }
 
             SetupNextStepPositions();
@@ -460,12 +460,16 @@ namespace Draughts.Visualisation
             avaiableMovesAll = moves;
 
             Move m;
-            lock (signaler)
+            lock (signaler_userMove)
             {
                 while (!userMoveReadyToReturn)
                 {
                     // Waits till 'playerMove' is set
-                    Monitor.Wait(signaler);
+                    Monitor.Wait(signaler_userMove);
+                    if (State == VisualiserState.Terminating)
+                    {
+                        return null;
+                    }
                 }
                 m = userSelectedMove;
                 userSelectedMove = null;
@@ -479,6 +483,24 @@ namespace Draughts.Visualisation
             State = VisualiserState.Idle;
             return m;
         }
+        private void TerminateUserMove()
+        {
+            lock (signaler_userMove)
+            {
+                userSelectedMove = null;
+                userMoveReadyToReturn = true;
+                Monitor.PulseAll(signaler_userMove);
+            }
+        }
+
+        public void TerminateGame()
+        {
+            if (State == VisualiserState.UserMove)
+            {
+                TerminateUserMove();
+            }
+        }
+
         public void ApplyMove(Move move, bool animate)
         {
             if (IsDisposed)
@@ -537,22 +559,26 @@ namespace Draughts.Visualisation
                     double dx = correctedTo.column - correctedFrom.column;
                     double dy = correctedTo.row - correctedFrom.row;
 
-                    double delta = animationUnitResolution;// * distance;
-
-                    double ddx = dx / delta;
-                    double ddy = dy / delta;
+                    double ddx = dx / animationUnitResolution;
+                    double ddy = dy / animationUnitResolution;
 
                     if (i != 0)
                     {
                         Thread.Sleep(100);
                     }
-                    for (int j = 0; j < delta; j++)
+                    for (int j = 0; j < animationUnitResolution; j++)
                     {
                         movingPiecePosition = (movingPiecePosition.x + ddx, movingPiecePosition.y + ddy);
-                        canvas.Dispatcher.Invoke(Refresh);
+                        Dispatcher.Invoke(Refresh);
 
                         Thread.Sleep((int)(1000 / animationUnitResolution / animationSpeed));
+
+                        if (State == VisualiserState.Terminating)
+                        {
+                            return;
+                        }
                     }
+
 
                     movingPiece = null;
                     piecesOnBoard[to.column, to.row] = ps;
@@ -560,7 +586,7 @@ namespace Draughts.Visualisation
 
                     if (move.promotion == i + 1)
                     {
-                        canvas.Dispatcher.Invoke(() => Promote(ps));
+                        Dispatcher.Invoke(() => Promote(ps));
                     }
 
                     canvas.Dispatcher.Invoke(Refresh);
@@ -638,6 +664,7 @@ namespace Draughts.Visualisation
             }
 #endif
         }
+        
 
         private void Promote(PieceShape ps)
         {
@@ -887,7 +914,24 @@ namespace Draughts.Visualisation
 
         public void Dispose()
         {
-            // TODO make sure everything is disposed
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException("Visualiser already disposed");
+            }
+            if (Thread.CurrentThread != Dispatcher.Thread)
+            {
+                Dispatcher.Invoke(Dispose);
+                return;
+            }
+
+            State = VisualiserState.Terminating;
+
+            if (State == VisualiserState.UserMove)
+            {
+                TerminateUserMove();
+            }
+
+            OnDispose?.Invoke();
 
             canvas.Children.Remove(rectBoardBorder);
             foreach (var line in linesTileBorders)
@@ -936,7 +980,8 @@ namespace Draughts.Visualisation
             canvas.MouseDown -= Canvas_MouseDown;
             canvas.SizeChanged -= Canvas_SizeChanged;
 
-            IsDisposed = true;
+            State = VisualiserState.Disposed;
+            System.Diagnostics.Debug.WriteLine($"Visualiser {gameControl.gameId} Disposed");
         }
         private void RemovePieceFromBoard(Position pos)
         {
@@ -948,5 +993,8 @@ namespace Draughts.Visualisation
                 canvas.Children.Remove(shape);
             }
         }
+
+
+        public event Action OnDispose;
     }
 }

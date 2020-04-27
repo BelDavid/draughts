@@ -12,11 +12,12 @@ namespace Draughts.Players
     {
         public PieceColor Color { get; private set; } = PieceColor.None;
 
-        public RulesType rules { get; private set; }
+        protected RulesType rules;
+        protected GameControl game;
 
         public Player() { }
 
-        public void Setup(PieceColor color, RulesType rules)
+        public void Setup(PieceColor color, RulesType rules, GameControl game)
         {
             if (Color != PieceColor.None)
             {
@@ -29,6 +30,7 @@ namespace Draughts.Players
 
             Color = color;
             this.rules = rules;
+            this.game = game;
         }
 
 
