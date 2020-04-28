@@ -11,7 +11,7 @@ namespace Draughts.Players
 {
     public class User : Player
     {
-        public User() : base()
+        public User(string id) : base(id)
         {
         }
         public Visualiser visualiser { private get; set; }

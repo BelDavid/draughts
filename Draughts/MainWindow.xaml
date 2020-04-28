@@ -15,9 +15,12 @@
 		</Grid.RowDefinitions>
 
 		<Menu Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="menu">
-			<MenuItem Header="New" Name="menu_new" Click="Menu_new_Click"/>
+			<MenuItem Header="New" Name="menu_new">
+				<MenuItem Header="2 Users" Name="menu_new_2users" Click="Menu_new_2users_Click"/>
+				<MenuItem Header="Against bot" Name="menu_new_bot"  Click="Menu_new_bot_Click"/>
+			</MenuItem>
 			<MenuItem Header="Exit" Name="menu_exit" Click="Menu_exit_Click"/>
-			<MenuItem Header="Log" Name="menu_log" Click="Menu_log_Click"/>
+			<?MenuItem Header="Log" Name="menu_log" Click="Menu_log_Click"/?>
 			
 		</Menu>
 

@@ -11,7 +11,7 @@ namespace Draughts.Players
 {
     class MinimaxBot : Player
     {
-        public MinimaxBot(int maxDepth, IBoardEvaluator evaluator, ProgressBar progressBar, bool allowCaching, bool allowAlphaBetaCutting)
+        public MinimaxBot(string id, int maxDepth, IBoardEvaluator evaluator, ProgressBar progressBar, bool allowCaching, bool allowAlphaBetaCutting) : base(id)
         {
             this.maxDepth = maxDepth;
             this.progressBar = progressBar;
@@ -160,7 +160,7 @@ namespace Draughts.Players
 
                 if (fitmoves.Count == 0)
                 {
-
+                    return new FitMove(0, null);
                 }
 
                 var minmax =

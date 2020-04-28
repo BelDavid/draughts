@@ -14,8 +14,11 @@ namespace Draughts.Players
 
         protected RulesType rules;
         protected GameControl game;
+        public readonly string id;
 
-        public Player() { }
+        public Player(string id) {
+            this.id = id;
+        }
 
         public void Setup(PieceColor color, RulesType rules, GameControl game)
         {

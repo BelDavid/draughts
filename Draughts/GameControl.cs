@@ -22,13 +22,13 @@ namespace Draughts
 
         public readonly GameRules gameRules;
         public readonly List<Move> MoveHistory = new List<Move>();
-        public readonly string gameId;
+        public readonly string id;
 
         public BoardState CurrentBoardState { get; private set; }
         public Player WhitePlayer { get; private set; }
         public Player BlackPlayer { get; private set; }
 
-        public PieceColor WinnerColor { get; private set; } = PieceColor.None;
+        public Player Winner { get; private set; }
         public bool IsRunning { get; private set; } = false;
         public bool IsTerminated { get; private set; } = false;
         public bool IsFinished { get; private set; } = false;
@@ -38,7 +38,7 @@ namespace Draughts
 
         public GameControl(string gameId, RulesType rules, Player whitePlayer, Player blackPlayer)
         {
-            this.gameId = gameId ?? string.Empty;
+            this.id = gameId ?? string.Empty;
             WhitePlayer = whitePlayer ?? throw new ArgumentNullException("WhitePlayer can not be null");
             BlackPlayer = blackPlayer ?? throw new ArgumentNullException("BlackPlayer can not be null");
 
@@ -71,20 +71,20 @@ namespace Draughts
         {
             gameThread.Start();
         }
-        public void Terminate(bool force, bool disposeVisualiserOnFinish)
+        public void Terminate(bool abortThread, bool disposeVisualiserOnFinish)
         {
             // TODO stop properly
             IsTerminated = true;
-            if (force)
+            if (abortThread)
             {
-                gameThread.Abort();
+                gameThread?.Abort();
             }
 
             this.disposeVisualiserOnFinish = disposeVisualiserOnFinish;
             visualiser?.TerminateGame();
         }
 
-        public PieceColor Run()
+        public Player Run()
         {
             IsRunning = true;
 
@@ -106,7 +106,7 @@ namespace Draughts
                 }
                 else if (IsRunning)
                 {
-                    WinnerColor = Utils.SwapColor(playerOnMove.Color);
+                    Winner = players[(moveCount + 1) % 2];
                     break;
                 }
             }
@@ -124,10 +124,10 @@ namespace Draughts
             }
 
             //System.Diagnostics.Debug.WriteLine($"Game {gameId} Finished");
-            return WinnerColor;
+            return Winner;
         }
 
-        public PieceColor Await()
+        public Player Await()
         {
             if (visualiser != null && visualiser.Dispatcher.Thread == Thread.CurrentThread)
             {
@@ -141,7 +141,7 @@ namespace Draughts
                     Monitor.Wait(signaler_run);
                 }
             }
-            return WinnerColor;
+            return Winner;
         }
     }
 }

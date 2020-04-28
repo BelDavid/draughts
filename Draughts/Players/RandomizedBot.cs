@@ -6,8 +6,12 @@ using System.Threading.Tasks;
 
 namespace Draughts.Players
 {
-    class RandomizedBot : Player
+    public class RandomizedBot : Player
     {
+        public RandomizedBot(string id) : base(id)
+        {
+        }
+
         public override Move MakeMove(BoardState boardState)
         {
             var moves = boardState.GetAvaiableMoves();

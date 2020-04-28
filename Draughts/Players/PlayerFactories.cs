@@ -12,9 +12,9 @@ namespace Draughts.Players
 
     public static class PlayerFactories
     {
-        public static PlayerFactory UserFactory() => () => new User();
-        public static PlayerFactory RandomizedBotFactory() => () => new RandomizedBot();
-        public static PlayerFactory MinimaxBotFactory(int depth, IBoardEvaluator evaluator, ProgressBar progressBar, bool allowCaching, bool allowAlphaBetaCutting) => 
-            () => new MinimaxBot(depth, evaluator, progressBar, allowCaching, allowAlphaBetaCutting);
+        public static PlayerFactory UserFactory(string id) => () => new User(id);
+        public static PlayerFactory RandomizedBotFactory(string id) => () => new RandomizedBot(id);
+        public static PlayerFactory MinimaxBotFactory(string id, int depth, IBoardEvaluator evaluator, ProgressBar progressBar, bool allowCaching, bool allowAlphaBetaCutting) => 
+            () => new MinimaxBot(id, depth, evaluator, progressBar, allowCaching, allowAlphaBetaCutting);
     }
 }
