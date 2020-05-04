@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draughts.Pieces;
 using Draughts.Rules;
+using Draughts.Game;
 
 namespace Draughts.Players
 {

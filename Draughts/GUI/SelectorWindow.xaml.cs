@@ -1,4 +1,5 @@
-﻿using Draughts.Pieces;
+﻿using Draughts.Game;
+using Draughts.Pieces;
 using Draughts.Players;
 using Draughts.Rules;
 using Microsoft.Win32;
@@ -25,7 +26,7 @@ namespace Draughts.GUI
     /// </summary>
     public partial class SelectorWindow : Window
     {
-        public SelectorWindow(SelectorWindowType windowType, Window owner = null)
+        public SelectorWindow(GameType windowType, Window owner = null)
         {
             if (owner != null)
             {
@@ -44,11 +45,11 @@ namespace Draughts.GUI
             this.windowType = windowType;
             switch (windowType)
             {
-                case SelectorWindowType.TwoUsers:
+                case GameType.Local:
                     Title = "2 users";
                     break;
 
-                case SelectorWindowType.AgainstBot:
+                case GameType.AgainstBot:
                     Title = "Against bot";
 
                     label_difficulty.Visibility = Visibility.Visible;
@@ -60,7 +61,7 @@ namespace Draughts.GUI
                     combobox_userColor.Visibility = Visibility.Visible;
                     break;
 
-                case SelectorWindowType.OverNetwork:
+                case GameType.OverNetwork:
                     Title = "Over Network";
 
                     label_userColor.Visibility = Visibility.Visible;
@@ -77,7 +78,7 @@ namespace Draughts.GUI
                     Grid.SetRow(button_ok, 7);
                     break;
 
-                case SelectorWindowType.Replay:
+                case GameType.Replay:
                     Title = "Replay";
 
                     label_rules.Visibility = Visibility.Hidden;
@@ -103,7 +104,7 @@ namespace Draughts.GUI
 
 
         private Regex regexIP;
-        private SelectorWindowType windowType;
+        private GameType windowType;
 
         public bool Sucess { get; private set; }
 
@@ -127,15 +128,15 @@ namespace Draughts.GUI
 
             switch (windowType)
             {
-                case SelectorWindowType.TwoUsers:
+                case GameType.Local:
                     break;
 
-                case SelectorWindowType.AgainstBot:
+                case GameType.AgainstBot:
                     color = combobox_userColor.SelectedIndex == 0 ? PieceColor.White : PieceColor.Black;
                     botDifficulty = (BotDifficulty)combobox_difficulty.SelectedItem;
                     break;
 
-                case SelectorWindowType.OverNetwork:
+                case GameType.OverNetwork:
                     networkType = (NetworkType)combobox_networkType.SelectedItem;
                     if (networkType == NetworkType.Client && !regexIP.IsMatch(textbox_serverIP.Text))
                     {
@@ -146,7 +147,7 @@ namespace Draughts.GUI
                     serverIPaddress = textbox_serverIP.Text;
                     break;
 
-                case SelectorWindowType.Replay:
+                case GameType.Replay:
                     filePath = textbox_filePath.Text;
                     if (!ValidateFilePath(textbox_filePath.Text))
                     {

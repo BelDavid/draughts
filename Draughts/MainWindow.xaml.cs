@@ -1,4 +1,5 @@
-﻿using Draughts.Pieces;
+﻿using Draughts.Game;
+using Draughts.Pieces;
 using Draughts.Players;
 using Draughts.BoardEvaluators;
 using Draughts.Rules;
@@ -196,7 +197,7 @@ namespace Draughts
         
         private void Menu_new_2users_Click(object sender, RoutedEventArgs e)
         {
-            var selector = new SelectorWindow(SelectorWindowType.TwoUsers, this);
+            var selector = new SelectorWindow(GameType.Local, this);
             selector.ShowDialog();
 
             if (selector.Sucess)
@@ -206,14 +207,14 @@ namespace Draughts
                 gameControl = new GameControl("user_vs_user", selector.rules, new User("user0"), new User("user1"));
                 visualiser = gameControl.GetVisualiser(this);
 
-                // TODO change window title
+                Title = "";
 
                 gameControl.Start();
             }
         }        
         private void Menu_new_bot_Click(object sender, RoutedEventArgs e)
         {
-            var selector = new SelectorWindow(SelectorWindowType.AgainstBot, this);
+            var selector = new SelectorWindow(GameType.AgainstBot, this);
             selector.ShowDialog();
 
             if (selector.Sucess)
@@ -256,7 +257,7 @@ namespace Draughts
 
         private void Menu_new_network_Click(object sender, RoutedEventArgs e)
         {
-            var selector = new SelectorWindow(SelectorWindowType.OverNetwork, this);
+            var selector = new SelectorWindow(GameType.OverNetwork, this);
             selector.ShowDialog();
 
             if (selector.Sucess)
@@ -274,7 +275,7 @@ namespace Draughts
 
         private void Menu_new_replay_Click(object sender, RoutedEventArgs e)
         {
-            var selector = new SelectorWindow(SelectorWindowType.Replay, this);
+            var selector = new SelectorWindow(GameType.Replay, this);
             selector.ShowDialog();
 
             if (selector.Sucess)

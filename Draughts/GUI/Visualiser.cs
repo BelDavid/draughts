@@ -1,4 +1,5 @@
-﻿using Draughts.Pieces;
+﻿using Draughts.Game;
+using Draughts.Pieces;
 using Draughts.Players;
 using System;
 using System.Collections.Generic;

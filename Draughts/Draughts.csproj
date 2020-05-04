@@ -36,6 +36,9 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Draughts.App</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -61,12 +64,12 @@
     <Compile Include="BoardEvaluators\BoardEvaluatorNeuralNetwork.cs" />
     <Compile Include="BoardState.cs" />
     <Compile Include="FinishReason.cs" />
-    <Compile Include="GameReplay.cs" />
+    <Compile Include="Game\GameReplay.cs" />
     <Compile Include="GUI\AnimationType.cs" />
     <Compile Include="GUI\SelectorWindow.xaml.cs">
       <DependentUpon>SelectorWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GUI\SelectorWindowType.cs" />
+    <Compile Include="Game\GameType.cs" />
     <Compile Include="Move.cs" />
     <Compile Include="Pieces\PieceShape.cs" />
     <Compile Include="BoardEvaluators\IBoardEvaluator.cs" />
@@ -77,7 +80,7 @@
     <Compile Include="Players\ReplayBot.cs" />
     <Compile Include="Rules\CzechRules.cs" />
     <Compile Include="Pieces\PieceRank.cs" />
-    <Compile Include="GameControl.cs" />
+    <Compile Include="Game\GameControl.cs" />
     <Compile Include="Players\Player.cs" />
     <Compile Include="Pieces\PieceType.cs" />
     <Compile Include="Pieces\PieceColor.cs" />

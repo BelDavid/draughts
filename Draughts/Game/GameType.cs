@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draughts.GUI
+namespace Draughts.Game
 {
-    public enum SelectorWindowType
+    public enum GameType
     {
-        TwoUsers,
+        Local,
         AgainstBot,
         OverNetwork,
         Replay
