@@ -22,11 +22,10 @@ namespace Draughts.GUI
     public class Visualiser : IDisposable
     {
         private readonly Canvas canvas;
+        private readonly MainWindow mainWindow;
         private readonly GameControl gameControl;
         private readonly PieceColor playersPerspective;
         private BoardState boardState => gameControl.CurrentBoardState;
-
-        private readonly Label label_endMessage;
 
         public Dispatcher Dispatcher => canvas.Dispatcher;
         public VisualiserState State { get; private set; } = VisualiserState.Idle;
@@ -98,11 +97,13 @@ namespace Draughts.GUI
         private (double x, double y) movingPiecePosition;
 
 
-        public Visualiser(Canvas canvas, GameControl gameControl)
+        public Visualiser(MainWindow mainWindow, GameControl gameControl)
         {
-            this.canvas = canvas ?? throw new ArgumentNullException("canvas can not be null");
-            this.canvas.SizeChanged += Canvas_SizeChanged;
+            this.mainWindow = mainWindow;
 
+            this.canvas = mainWindow.canvas_board ?? throw new ArgumentNullException("canvas can not be null");
+            this.canvas.SizeChanged += Canvas_SizeChanged;
+            
             this.gameControl = gameControl ?? throw new ArgumentNullException("gameControl can not be null");
 
             var whiteUser = gameControl.WhitePlayer as User;
@@ -219,15 +220,6 @@ namespace Draughts.GUI
                     canvas.Children.Add(ellipse);
                 }
             }
-
-            label_endMessage = new Label()
-            {
-                Foreground = Brushes.Blue,
-                FontWeight = FontWeights.Bold,
-                Content = "End Message",
-                Visibility = Visibility.Hidden,
-            };
-            canvas.Children.Add(label_endMessage);
 
             // Input
             canvas.MouseDown += Canvas_MouseDown;
@@ -886,13 +878,6 @@ namespace Draughts.GUI
             rectBoardBorder.Height = Size + 2 * rectBoardBorder.StrokeThickness;
             Canvas.SetLeft(rectBoardBorder, OffsetX - rectBoardBorder.StrokeThickness);
             Canvas.SetTop(rectBoardBorder, OffsetY - rectBoardBorder.StrokeThickness);
-
-
-            // End message
-            label_endMessage.FontSize = endMessageFontSize * Multiplier;
-
-            Canvas.SetLeft(label_endMessage, OffsetX + Size / 2 - label_endMessage.ActualWidth / 2);
-            Canvas.SetTop(label_endMessage, 0);
         }
         private void DrawPiece(double centerX, double centerY, double scale, PieceShape pieceShape)
         {
@@ -1000,7 +985,7 @@ namespace Draughts.GUI
                 canvas.Children.Remove(ellipse);
             }
 
-            canvas.Children.Remove(label_endMessage);
+            mainWindow.SetEndMessage(null);
 
             canvas.MouseDown -= Canvas_MouseDown;
             canvas.SizeChanged -= Canvas_SizeChanged;
@@ -1026,10 +1011,7 @@ namespace Draughts.GUI
                 throw new ObjectDisposedException("Visualiser disposed");
             }
 
-            Dispatcher.Invoke(() => {
-                label_endMessage.Content = message;
-                label_endMessage.Visibility = Visibility.Visible;
-            });
+            mainWindow.SetEndMessage(message);
         }
 
         public event Action OnDispose;

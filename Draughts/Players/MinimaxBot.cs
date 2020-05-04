@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using Draughts.Pieces;
 using Draughts.BoardEvaluators;
+using System.Windows.Threading;
 
 namespace Draughts.Players
 {
@@ -45,10 +46,10 @@ namespace Draughts.Players
         {
             if (progressBar != null)
             {
-                progressBar.Dispatcher.Invoke(() =>
+                progressBar.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
                 {
                     progressBar.Value = progress;
-                });
+                }));
             }
         }
 
@@ -58,7 +59,6 @@ namespace Draughts.Players
             if (allowCaching && cache.ContainsKey(state))
             {
                 progress += progressDelta;
-
                 if (depth <= reportDepth)
                 {
                     ReportProgress(progress);

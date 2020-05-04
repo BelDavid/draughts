@@ -11,5 +11,9 @@ namespace Draughts.Players
         Randomized,
         Easy,
         Medium,
+
+#if DEBUG
+        Depth10,
+#endif
     }
 }

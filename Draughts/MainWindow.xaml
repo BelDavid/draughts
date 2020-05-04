@@ -6,11 +6,13 @@
         xmlns:local="clr-namespace:Draughts"
         mc:Ignorable="d"
         Title="MainWindow" Height="600" Width="600" MinWidth="200" MinHeight="200"
+		  Background="LightGray"
 		  Loaded="MainWindow_Loaded" x:Name="mainWindow" WindowStartupLocation="CenterScreen" Closed="MainWindow_Closed" KeyDown="MainWindow_KeyDown">
-    <Grid>
+	<Grid x:Name="grid_main">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="20"/>
 			<RowDefinition Height="4"/>
+			<RowDefinition Height="20"/>
 			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
 
@@ -22,13 +24,15 @@
 				<MenuItem Name="menu_new_replay"  Header="Replay"        Click="Menu_new_replay_Click"/>
 			</MenuItem>
 			<MenuItem Name="menu_saveReplay" Header="Save replay" Click="Menu_saveReplay_Click"/>
+			<MenuItem Name="menu_help" Header="Help" Click="Menu_help_Click"/>
 			<MenuItem Name="menu_exit" Header="Exit" Click="Menu_exit_Click"/>
 		</Menu>
 
+		<Label Name="label_pause" Content="PAUSED" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="0" FontWeight="Bold" FontSize="14" Visibility="Hidden"/>
 		<ProgressBar Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="progressbar_bot" Value="100" />
 
-		<Canvas Grid.Row="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Name="canvas_board" Background="White"/>
+		<Label Name="label_endMessage" Grid.Row="2" Foreground="Red" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Padding="0" FontWeight="Bold" FontSize="15" Visibility="Hidden"/>
 
-		<Label Name="label_pause" Content="PAUSED" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="0" FontWeight="Bold" FontSize="14" Visibility="Hidden"/>
+		<Canvas Grid.Row="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Name="canvas_board"/>
 	</Grid>
 </Window>

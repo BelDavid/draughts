@@ -97,11 +97,11 @@ namespace Draughts
             this.label_pause = label_pause;
         }
 
-        public Visualiser GetVisualiser(Canvas canvasBoard)
+        public Visualiser GetVisualiser(MainWindow mainWindow)
         {
             if (visualiser == null)
             {
-                visualiser = new Visualiser(canvasBoard, this);
+                visualiser = new Visualiser(mainWindow, this);
                 visualiser.Refresh();
             }
 
@@ -138,7 +138,7 @@ namespace Draughts
         {
             IsRunning = true;
 
-            for (int moveCount = 0; true; moveCount++)
+            for (int moveCount = 0; IsRunning && !IsTerminated; moveCount++)
             {
                 if (moveCount >= MoveCountLimit)
                 {
@@ -146,6 +146,17 @@ namespace Draughts
                     break;
                 }
 
+                var playerOnMove = players[moveCount % 2];
+                var move = playerOnMove.MakeMove(CurrentBoardState);
+
+                if (IsTerminated)
+                {
+                    finishReason = FinishReason.Terminated;
+                    break;
+                }
+
+                else if (move != null)
+                {
                 if (IsReplay)
                 {
                     if (animationSpeed == AnimationSpeed.Manual)
@@ -166,23 +177,6 @@ namespace Draughts
                         }
                     }
                 }
-                if (IsTerminated)
-                {
-                    finishReason = FinishReason.Terminated;
-                    break;
-                }
-
-                var playerOnMove = players[moveCount % 2];
-                var move = playerOnMove.MakeMove(CurrentBoardState);
-
-                if (IsTerminated)
-                {
-                    finishReason = FinishReason.Terminated;
-                    break;
-                }
-
-                else if (move != null)
-                {
                     CurrentBoardState = CurrentBoardState.ApplyMove(move);
                     MoveHistory.Add(move);
 
@@ -192,6 +186,7 @@ namespace Draughts
                 {
                     Winner = players[(moveCount + 1) % 2];
                     finishReason = FinishReason.OnePlayerWon;
+                    break;
                 }
             }
 
@@ -202,11 +197,6 @@ namespace Draughts
                 Monitor.PulseAll(signaler_run);
             }
 
-            if (disposeVisualiserOnFinish && (!visualiser?.IsDisposed ?? false))
-            {
-                visualiser?.Dispose();
-            }
-            
             if (IsReplay)
             {
                 // Hide label_pause in case it was left visible
@@ -228,6 +218,11 @@ namespace Draughts
                     throw new NotImplementedException();
             }
 
+            if (disposeVisualiserOnFinish && (!visualiser?.IsDisposed ?? false))
+            {
+                visualiser?.Dispose();
+            }
+            
             //System.Diagnostics.Debug.WriteLine($"Game {gameId} Finished");
             return finishReason;
         }

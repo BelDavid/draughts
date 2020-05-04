@@ -24,6 +24,7 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.Win32;
 using Microsoft.SqlServer.Server;
+using System.Windows.Threading;
 
 namespace Draughts
 {
@@ -37,7 +38,6 @@ namespace Draughts
             InitializeComponent();
 
             formatter = new BinaryFormatter();
-
 
             //int numberOfGames = 100;
             //threads = new Thread[]
@@ -76,7 +76,7 @@ namespace Draughts
             visualiser = null;
         }
 
-        private void Simulate(string id, RulesType rules, Func<string, Player> bot0Factory, Func<string, Player> bot1Factory, int numberOfRuns, Canvas canvas)
+        private void Simulate(string id, RulesType rules, Func<string, Player> bot0Factory, Func<string, Player> bot1Factory, int numberOfRuns, MainWindow mainWindow)
         {
             //TerminateGame(false);
             Debug.WriteLine($"[{id}] simulation started");
@@ -99,11 +99,11 @@ namespace Draughts
                 GameControl gameControl = new GameControl($"{id}", rules, firstPlayer, secondPlayer);
                 Visualiser visualiser = null;
 
-                if (canvas != null)
+                if (mainWindow != null)
                 {
                     canvas_board.Dispatcher.Invoke(() =>
                     {
-                        visualiser = gameControl.GetVisualiser(canvas);
+                        visualiser = gameControl.GetVisualiser(this);
                         visualiser.animationSpeed = 10;
                     });
                 }
@@ -147,6 +147,23 @@ namespace Draughts
             }
         }
 
+        public void SetEndMessage(string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (string.IsNullOrEmpty(message))
+                {
+                    label_endMessage.Content = "";
+                    label_endMessage.Visibility = Visibility.Hidden;
+                }
+                else
+                {
+                    label_endMessage.Content = message;
+                    label_endMessage.Visibility = Visibility.Visible;
+                }
+            });
+        }
+
         private void MainWindow_Closed(object sender, EventArgs e)
         {
             TerminateGame(true);
@@ -187,7 +204,7 @@ namespace Draughts
                 TerminateGame(false);
 
                 gameControl = new GameControl("user_vs_user", selector.rules, new User("user0"), new User("user1"));
-                visualiser = gameControl.GetVisualiser(canvas_board);
+                visualiser = gameControl.GetVisualiser(this);
 
                 // TODO change window title
 
@@ -216,6 +233,11 @@ namespace Draughts
                     case BotDifficulty.Medium:
                         bot = new MinimaxBot("minimax7", 7, new BoardEvaluatorBasic(), progressbar_bot, true, true);
                         break;
+#if DEBUG
+                    case BotDifficulty.Depth10:
+                        bot = new MinimaxBot("minimax10", 10, new BoardEvaluatorBasic(), progressbar_bot, true, true);
+                        break;
+#endif
                     default:
                         throw new NotImplementedException();
                 }
@@ -224,7 +246,7 @@ namespace Draughts
                 Player blackPlayer = selector.color == PieceColor.White ? bot : user;
 
                 gameControl = new GameControl("user_vs_bot", selector.rules, whitePlayer, blackPlayer);
-                visualiser = gameControl.GetVisualiser(canvas_board);
+                visualiser = gameControl.GetVisualiser(this);
 
                 // TODO change window title
 
@@ -266,7 +288,7 @@ namespace Draughts
                         var gameReplay = (GameReplay)formatter.Deserialize(fs);
 
                         gameControl = new GameControl("replay", gameReplay, selector.animationSpeed, label_pause);
-                        visualiser = gameControl.GetVisualiser(canvas_board);
+                        visualiser = gameControl.GetVisualiser(this);
 
                         switch (selector.animationSpeed)
                         {
@@ -336,6 +358,19 @@ namespace Draughts
         private void MainWindow_KeyDown(object sender, KeyEventArgs e)
         {
             gameControl?.KeyPressed(e.Key);
+        }
+
+        private void Menu_help_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(
+@"GamePlay:
+ - Use Left mouse button to select piece and then to select place to move on
+ - Use Right mouse button to deselect piece
+
+Replay:
+ - In manual mode, use Space to make next step, otherwise use Space to pause animation
+",
+"How to play");
         }
     }
 }
