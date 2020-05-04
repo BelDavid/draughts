@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draughts.Rules
+namespace Draughts
 {
-    [Serializable]
-    public enum RulesType
+    public enum FinishReason
     {
-        Czech,
+        OnePlayerWon,
+        Terminated,
+        MoveLimitReached,
     }
 }

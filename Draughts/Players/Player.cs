@@ -17,7 +17,7 @@ namespace Draughts.Players
         public readonly string id;
 
         public Player(string id) {
-            this.id = id;
+            this.id = id ?? string.Empty;
         }
 
         public void Setup(PieceColor color, RulesType rules, GameControl game)

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Draughts
 {
+    [Serializable]
     public struct Position
     {
         public byte column, row;

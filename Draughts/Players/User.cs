@@ -1,7 +1,7 @@
 ﻿using Draughts.Pieces;
 using Draughts.Rules;
 using System;
-using Draughts.Visualisation;
+using Draughts.GUI;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

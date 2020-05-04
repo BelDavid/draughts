@@ -5,7 +5,7 @@ using Draughts.Rules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Draughts.Visualisation;
+using Draughts.GUI;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +19,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using Microsoft.Win32;
+using Microsoft.SqlServer.Server;
 
 namespace Draughts
 {
@@ -31,18 +36,25 @@ namespace Draughts
         {
             InitializeComponent();
 
+            formatter = new BinaryFormatter();
+
+
             //int numberOfGames = 100;
             //threads = new Thread[]
             //{
             //    new Thread(() => Simulate(
             //        "game0",
             //        RulesType.Czech,
-            //        PlayerFactories.MinimaxBotFactory("minimax5", 5, new BoardEvaluatorBasic(), null, true, true),
-            //        PlayerFactories.MinimaxBotFactory("minimax4", 4, new BoardEvaluatorBasic(), null, true, true),
+            //        id => new MinimaxBot(id, 5, new BoardEvaluatorBasic(), null, true, true),
+            //        id => new MinimaxBot(id, 4, new BoardEvaluatorBasic(), null, true, true),
             //        numberOfGames,
             //        null
             //    )),
             //};
+
+            //gameControl = new GameControl("bots", RulesType.Czech, new RandomizedBot("bot0"), new RandomizedBot("bot1"));
+            //visualiser = gameControl.GetVisualiser(canvas_board);
+
         }
 
         // Testing
@@ -51,7 +63,7 @@ namespace Draughts
         private object signaler_output = new object();
 
         private Thread[] threads;
-
+        private IFormatter formatter;
 
         private void TerminateGame(bool force)
         {
@@ -64,36 +76,27 @@ namespace Draughts
             visualiser = null;
         }
 
-        private void Simulate(string id, RulesType rules, PlayerFactory firstPlayerFactory, PlayerFactory secondPlayerFactory, int numberOfRuns, Canvas canvas)
+        private void Simulate(string id, RulesType rules, Func<string, Player> bot0Factory, Func<string, Player> bot1Factory, int numberOfRuns, Canvas canvas)
         {
             //TerminateGame(false);
             Debug.WriteLine($"[{id}] simulation started");
 
-            int firstPlayerWins = 0;
-            int secondPlayerWins = 0;
+            int bot0Wins = 0;
+            int bot1Wins = 0;
             int tieCount = 0;
 
-            string firstPlayerId = null;
-            string secondPlayerId = null;
+            string bot0Id = "bot0";
+            string bot1Id = "bot1";
 
             for (int i = 0; i < numberOfRuns; i++)
             {
-                var firstPlayer = firstPlayerFactory();
-                var secondPlayer = secondPlayerFactory();
+                var bot0 = bot0Factory(bot0Id);
+                var bot1 = bot1Factory(bot1Id);
 
-                if (firstPlayerId is null)
-                {
-                    firstPlayerId = firstPlayer.id;
-                }
-                if (secondPlayerId is null)
-                {
-                    secondPlayerId = secondPlayer.id;
-                }
+                var firstPlayer = i % 2 == 0 ? bot0 : bot1;
+                var secondPlayer = i % 2 == 0 ? bot1 : bot0;
 
-                var whitePlayer = i % 2 == 0 ? firstPlayer : secondPlayer;
-                var blackPlayer = i % 2 == 0 ? secondPlayer : firstPlayer;
-
-                GameControl gameControl = new GameControl($"{id}", rules, whitePlayer, blackPlayer);
+                GameControl gameControl = new GameControl($"{id}", rules, firstPlayer, secondPlayer);
                 Visualiser visualiser = null;
 
                 if (canvas != null)
@@ -105,7 +108,7 @@ namespace Draughts
                     });
                 }
 
-                var winner = gameControl.Run();
+                var finishReason = gameControl.Run();
 
                 if (visualiser != null)
                 {
@@ -114,17 +117,20 @@ namespace Draughts
 
                 visualiser?.Dispose();
 
-                if (winner == firstPlayer)
+                if (finishReason == FinishReason.OnePlayerWon)
                 {
-                    firstPlayerWins += 1;
-                    Debug.WriteLine($"[{id}] '{firstPlayerId}' player won");
+                    if (gameControl.Winner == bot0)
+                    {
+                        bot0Wins += 1;
+                        Debug.WriteLine($"[{id}] '{bot0Id}' won");
+                    }
+                    else if (gameControl.Winner == bot1)
+                    {
+                        bot1Wins += 1;
+                        Debug.WriteLine($"[{id}] '{bot1Id}' won");
+                    }
                 }
-                else if (winner == secondPlayer)
-                {
-                    secondPlayerWins += 1;
-                    Debug.WriteLine($"[{id}] '{secondPlayerId}' player won");
-                }
-                else
+                else if (finishReason == FinishReason.MoveLimitReached)
                 {
                     tieCount += 1;
                     Debug.WriteLine($"[{id}] tie");
@@ -133,11 +139,11 @@ namespace Draughts
 
             lock (signaler_output)
             {
-                Debug.WriteLine($"Final score ({id}):");
-                Debug.WriteLine($"#'{firstPlayerId}' player wins = {firstPlayerWins}");
-                Debug.WriteLine($"#'{secondPlayerId}' player wins = {secondPlayerWins}");
-                Debug.WriteLine($"#ties = {tieCount}");
-                Debug.WriteLine($"balance = {(firstPlayerWins - secondPlayerWins) / (float)numberOfRuns}");
+                Debug.WriteLine($"[{id}] Final score:");
+                Debug.WriteLine($"[{id}] #'{bot0Id}' wins = {bot0Wins}");
+                Debug.WriteLine($"[{id}] #'{bot1Id}' wins = {bot1Wins}");
+                Debug.WriteLine($"[{id}] #ties = {tieCount}");
+                Debug.WriteLine($"[{id}] balance = {(bot0Wins - bot1Wins) / (float)numberOfRuns}");
             }
         }
 
@@ -173,34 +179,163 @@ namespace Draughts
         
         private void Menu_new_2users_Click(object sender, RoutedEventArgs e)
         {
-            TerminateGame(false);
+            var selector = new SelectorWindow(SelectorWindowType.TwoUsers, this);
+            selector.ShowDialog();
 
-            // TODO rules selector
-            gameControl = new GameControl("2users", RulesType.Czech, new User("user0"), new User("user1"));
-            visualiser = gameControl.GetVisualiser(canvas_board);
-            
-            // TODO change window title
+            if (selector.Sucess)
+            {
+                TerminateGame(false);
 
-            gameControl.Start();
+                gameControl = new GameControl("user_vs_user", selector.rules, new User("user0"), new User("user1"));
+                visualiser = gameControl.GetVisualiser(canvas_board);
+
+                // TODO change window title
+
+                gameControl.Start();
+            }
         }        
         private void Menu_new_bot_Click(object sender, RoutedEventArgs e)
         {
-            TerminateGame(false);
+            var selector = new SelectorWindow(SelectorWindowType.AgainstBot, this);
+            selector.ShowDialog();
 
-            // TODO rules, side, difficulty selector
-            TerminateGame(false);
+            if (selector.Sucess)
+            {
+                TerminateGame(false);
 
-            const int minimaxDepth = 7;
-            gameControl =
-                Utils.rand.Next(2) == 0
-                ? new GameControl(null, RulesType.Czech, new User("user"), new MinimaxBot($"minmax{minimaxDepth}", minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot, true, true))
-                : new GameControl(null, RulesType.Czech, new MinimaxBot($"minmax{minimaxDepth}", minimaxDepth, new BoardEvaluatorBasic(), progressbar_bot, true, true), new User("user"));
+                Player user = new User("user");
+                Player bot;
+                switch (selector.botDifficulty)
+                {
+                    case BotDifficulty.Randomized:
+                        bot = new RandomizedBot("randbot");
+                        break;
+                    case BotDifficulty.Easy:
+                        bot = new MinimaxBot("minimax3", 3, new BoardEvaluatorBasic(), progressbar_bot, true, true);
+                        break;
+                    case BotDifficulty.Medium:
+                        bot = new MinimaxBot("minimax7", 7, new BoardEvaluatorBasic(), progressbar_bot, true, true);
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+                
+                Player whitePlayer = selector.color == PieceColor.White ? user : bot;
+                Player blackPlayer = selector.color == PieceColor.White ? bot : user;
 
-            visualiser = gameControl.GetVisualiser(canvas_board);
+                gameControl = new GameControl("user_vs_bot", selector.rules, whitePlayer, blackPlayer);
+                visualiser = gameControl.GetVisualiser(canvas_board);
 
-            // TODO change window title
+                // TODO change window title
 
-            gameControl.Start();
+                gameControl.Start();
+            }
+        }
+
+        private void Menu_new_network_Click(object sender, RoutedEventArgs e)
+        {
+            var selector = new SelectorWindow(SelectorWindowType.OverNetwork, this);
+            selector.ShowDialog();
+
+            if (selector.Sucess)
+            {
+                TerminateGame(false);
+
+                //gameControl = new GameControl("user_vs_user", selector.rules, new User("user0"), new User("user1"));
+                //visualiser = gameControl.GetVisualiser(canvas_board);
+
+                // TODO change window title
+
+                //gameControl.Start();
+            }
+        }
+
+        private void Menu_new_replay_Click(object sender, RoutedEventArgs e)
+        {
+            var selector = new SelectorWindow(SelectorWindowType.Replay, this);
+            selector.ShowDialog();
+
+            if (selector.Sucess)
+            {
+                TerminateGame(false);
+
+                try
+                {
+                    using (var fs = new FileStream(selector.filePath, FileMode.Open, FileAccess.Read))
+                    {
+                        var gameReplay = (GameReplay)formatter.Deserialize(fs);
+
+                        gameControl = new GameControl("replay", gameReplay, selector.animationSpeed, label_pause);
+                        visualiser = gameControl.GetVisualiser(canvas_board);
+
+                        switch (selector.animationSpeed)
+                        {
+                            case AnimationSpeed.Manual:
+                                break;
+
+                            case AnimationSpeed.Slow:
+                                visualiser.animationSpeed = 2;
+                                break;
+
+                            case AnimationSpeed.Medium:
+                                visualiser.animationSpeed = 5;
+                                break;
+
+                            case AnimationSpeed.Fast:
+                                visualiser.animationSpeed = 20;
+                                break;
+
+                            default:
+                                throw new NotImplementedException();
+                        }
+
+                        gameControl.Start();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error deserializing Replay from file {selector.filePath}\n{ex.Message}");
+                }
+            }
+        }
+
+
+        private void Menu_saveReplay_Click(object sender, RoutedEventArgs e)
+        {
+            if (gameControl != null)
+            {
+                if (gameControl.IsFinished)
+                {
+                    try
+                    {
+                        var fd = new SaveFileDialog() {
+                            OverwritePrompt = true,
+                            ValidateNames = true,
+                            DefaultExt = $".{Utils.replayFileExt}",
+                            Filter = $"*.{Utils.replayFileExt} files|*.{Utils.replayFileExt}",
+                        };
+
+                        if (fd.ShowDialog() ?? false)
+                        {
+                            var fs = new FileStream(fd.FileName, FileMode.Create, FileAccess.Write);
+                            formatter.Serialize(fs, gameControl.GetReplay());
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error serializing Replay\n{ex.Message}");
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Game not finished yet!");
+                }
+            }
+        }
+
+        private void MainWindow_KeyDown(object sender, KeyEventArgs e)
+        {
+            gameControl?.KeyPressed(e.Key);
         }
     }
 }

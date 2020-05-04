@@ -2,7 +2,10 @@
 using Draughts.Players;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +17,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using static Draughts.Utils;
 
-namespace Draughts.Visualisation
+namespace Draughts.GUI
 {
     public class Visualiser : IDisposable
     {
@@ -22,6 +25,79 @@ namespace Draughts.Visualisation
         private readonly GameControl gameControl;
         private readonly PieceColor playersPerspective;
         private BoardState boardState => gameControl.CurrentBoardState;
+
+        private readonly Label label_endMessage;
+
+        public Dispatcher Dispatcher => canvas.Dispatcher;
+        public VisualiserState State { get; private set; } = VisualiserState.Idle;
+        public int Size { get; private set; } = 100;
+        public int OffsetX { get; private set; } = 0;
+        public int OffsetY { get; private set; } = 0;
+        public double TileWidth { get; private set; }
+        public double TileHeight { get; private set; }
+        public double Multiplier { get; private set; } = 1;
+        public byte NumberOfColumns => gameControl.gameRules.numberOfColumns;
+        public byte NumberOfRows => gameControl.gameRules.numberOfRows;
+        public bool IsDisposed => State == VisualiserState.Disposed;
+
+
+        // Margin ratios
+        public const double 
+            boardMarginRatio = 0.05d,
+            pieceMarginRatio = 0.08d,
+            crownMarginRatio = 0.30d,
+            avaiablePositionMarginRatio = 0.33d;
+
+        // Animation
+        public double
+            animationSpeed = 5,
+            animationUnitResolution = 40;
+
+        // Const values of board of size 200
+        public const double
+           boardBorderThickness = 4d,
+           tileBorderThickness = 1d,
+           pieceBorderThickness = 1.2d,
+           lastMoveLineThickness = 1d,
+           ongoingMoveLineThickness = 1d,
+           rectangleAroundSelectedPieceThickness = 1.5d,
+           endMessageFontSize = 20d;
+
+
+        // Canvas objects
+        private readonly Rectangle rectBoardBorder;
+        private readonly Line[] linesTileBorders;
+        private readonly Rectangle[] rectTiles;
+
+        private readonly PieceShape[,] piecesOnBoard;
+
+
+        // User Selecting move
+        private Rectangle rectangleAroundSelectedPiece;
+        private List<Position> userSelectionPath;
+        
+        private List<Move> avaiableMovesFromSelectedPath;
+        private List<Move> avaiableMovesAll;
+        private List<Position> piecesThatCanMove;
+        private List<Position> avaiablePositionsForNextStep;
+        
+        private List<Line> linesSelectionPath;
+        private Ellipse[,] ellipsesAvaiablePositions;
+
+
+        private Move userSelectedMove;
+        private bool userMoveReadyToReturn = false;
+        private readonly object signaler_userMove = new object();
+
+        // Last Move
+        private Move lastMove;
+        private List<Line> linesLastMove;
+
+        // Animation
+        private PieceShape movingPiece;
+        private (double x, double y) movingPiecePosition;
+
+
         public Visualiser(Canvas canvas, GameControl gameControl)
         {
             this.canvas = canvas ?? throw new ArgumentNullException("canvas can not be null");
@@ -74,7 +150,7 @@ namespace Draughts.Visualisation
             linesTileBorders = new System.Windows.Shapes.Line[NumberOfColumns + NumberOfRows - 2];
             for (int i = 0; i < linesTileBorders.Length; i++)
             {
-                var line = new System.Windows.Shapes.Line() { Stroke = Brushes.Gray, };
+                var line = new Line() { Stroke = Brushes.Gray, };
 
                 linesTileBorders[i] = line;
                 canvas.Children.Add(line);
@@ -109,10 +185,11 @@ namespace Draughts.Visualisation
                     if (pieceType != PieceType.None)
                     {
                         var pieceColor = GetColor(pieceType);
-                        var pieceShape = new PieceShape() 
-                        { 
+                        var pieceShape = new PieceShape()
+                        {
                             pieceType = pieceType,
-                            ellipse_base = new Ellipse() { 
+                            ellipse_base = new Ellipse()
+                            {
                                 Stroke = pieceColor == PieceColor.White ? Brushes.DarkSlateGray : Brushes.Gray,
                                 Fill = pieceColor == PieceColor.White ? Brushes.White : Brushes.Black,
                             },
@@ -143,79 +220,18 @@ namespace Draughts.Visualisation
                 }
             }
 
+            label_endMessage = new Label()
+            {
+                Foreground = Brushes.Blue,
+                FontWeight = FontWeights.Bold,
+                Content = "End Message",
+                Visibility = Visibility.Hidden,
+            };
+            canvas.Children.Add(label_endMessage);
 
             // Input
             canvas.MouseDown += Canvas_MouseDown;
         }
-
-        public Dispatcher Dispatcher => canvas.Dispatcher;
-        public VisualiserState State { get; private set; } = VisualiserState.Idle;
-        public int Size { get; private set; } = 100;
-        public int OffsetX { get; private set; } = 0;
-        public int OffsetY { get; private set; } = 0;
-        public double TileWidth { get; private set; }
-        public double TileHeight { get; private set; }
-        public double Multiplier { get; private set; } = 1;
-        public byte NumberOfColumns => gameControl.gameRules.numberOfColumns;
-        public byte NumberOfRows => gameControl.gameRules.numberOfRows;
-        public bool IsDisposed => State == VisualiserState.Disposed;
-
-
-        // Margin ratios
-        public const double 
-            boardMarginRatio = 0.05d,
-            pieceMarginRatio = 0.08d,
-            crownMarginRatio = 0.30d,
-            avaiablePositionMarginRatio = 0.33d;
-
-        // Animation
-        public double
-            animationSpeed = 5,
-            animationUnitResolution = 40;
-
-        // Const values of board of size 200
-        public const double
-           boardBorderThickness = 4d,
-           tileBorderThickness = 1d,
-           pieceBorderThickness = 1.2d,
-           lastMoveLineThickness = 1d,
-           ongoingMoveLineThickness = 1d,
-           rectangleAroundSelectedPieceThickness = 1.5d;
-
-
-        // Canvas objects
-        private readonly Rectangle rectBoardBorder;
-        private readonly Line[] linesTileBorders;
-        private readonly Rectangle[] rectTiles;
-
-        private readonly PieceShape[,] piecesOnBoard;
-
-
-        // User Selecting move
-        private Rectangle rectangleAroundSelectedPiece;
-        private List<Position> userSelectionPath;
-        
-        private List<Move> avaiableMovesFromSelectedPath;
-        private List<Move> avaiableMovesAll;
-        private List<Position> piecesThatCanMove;
-        private List<Position> avaiablePositionsForNextStep;
-        
-        private List<Line> linesSelectionPath;
-        private Ellipse[,] ellipsesAvaiablePositions;
-
-
-        private Move userSelectedMove;
-        private bool userMoveReadyToReturn = false;
-        private readonly object signaler_userMove = new object();
-
-        // Last Move
-        private Move lastMove;
-        private List<Line> linesLastMove;
-
-        // Animation
-        private PieceShape movingPiece;
-        private (double x, double y) movingPiecePosition;
-
 
         // Input
         private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
@@ -870,6 +886,13 @@ namespace Draughts.Visualisation
             rectBoardBorder.Height = Size + 2 * rectBoardBorder.StrokeThickness;
             Canvas.SetLeft(rectBoardBorder, OffsetX - rectBoardBorder.StrokeThickness);
             Canvas.SetTop(rectBoardBorder, OffsetY - rectBoardBorder.StrokeThickness);
+
+
+            // End message
+            label_endMessage.FontSize = endMessageFontSize * Multiplier;
+
+            Canvas.SetLeft(label_endMessage, OffsetX + Size / 2 - label_endMessage.ActualWidth / 2);
+            Canvas.SetTop(label_endMessage, 0);
         }
         private void DrawPiece(double centerX, double centerY, double scale, PieceShape pieceShape)
         {
@@ -977,6 +1000,8 @@ namespace Draughts.Visualisation
                 canvas.Children.Remove(ellipse);
             }
 
+            canvas.Children.Remove(label_endMessage);
+
             canvas.MouseDown -= Canvas_MouseDown;
             canvas.SizeChanged -= Canvas_SizeChanged;
 
@@ -994,6 +1019,18 @@ namespace Draughts.Visualisation
             }
         }
 
+        public void SetEndMessage(string message)
+        {
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException("Visualiser disposed");
+            }
+
+            Dispatcher.Invoke(() => {
+                label_endMessage.Content = message;
+                label_endMessage.Visibility = Visibility.Visible;
+            });
+        }
 
         public event Action OnDispose;
     }

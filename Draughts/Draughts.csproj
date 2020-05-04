@@ -60,12 +60,21 @@
     <Compile Include="BoardEvaluators\BoardEvaluatorBasic.cs" />
     <Compile Include="BoardEvaluators\BoardEvaluatorNeuralNetwork.cs" />
     <Compile Include="BoardState.cs" />
+    <Compile Include="FinishReason.cs" />
+    <Compile Include="GameReplay.cs" />
+    <Compile Include="GUI\AnimationType.cs" />
+    <Compile Include="GUI\SelectorWindow.xaml.cs">
+      <DependentUpon>SelectorWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\SelectorWindowType.cs" />
     <Compile Include="Move.cs" />
     <Compile Include="Pieces\PieceShape.cs" />
     <Compile Include="BoardEvaluators\IBoardEvaluator.cs" />
+    <Compile Include="Players\BotDifficulty.cs" />
     <Compile Include="Players\MinimaxBot.cs" />
-    <Compile Include="Players\PlayerFactories.cs" />
+    <Compile Include="Players\NetworkType.cs" />
     <Compile Include="Players\RandomizedBot.cs" />
+    <Compile Include="Players\ReplayBot.cs" />
     <Compile Include="Rules\CzechRules.cs" />
     <Compile Include="Pieces\PieceRank.cs" />
     <Compile Include="GameControl.cs" />
@@ -77,8 +86,12 @@
     <Compile Include="Rules\GameRules.cs" />
     <Compile Include="Rules\RulesType.cs" />
     <Compile Include="Utils.cs" />
-    <Compile Include="Visualisation\Visualiser.cs" />
-    <Compile Include="Visualisation\VisualiserState.cs" />
+    <Compile Include="GUI\Visualiser.cs" />
+    <Compile Include="GUI\VisualiserState.cs" />
+    <Page Include="GUI\SelectorWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

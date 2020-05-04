@@ -15,6 +15,8 @@ namespace Draughts
         private static readonly ThreadLocal<Random> _rand = new ThreadLocal<Random>(() => { lock (randOverlord) return new Random(randOverlord.Next()); });
         public static Random rand => _rand.Value;
 
+        public const string replayFileExt = "drep";
+
         public static bool AnyPiece(PieceType pieceType) => (((int)pieceType >> 2) & 0b_1) == 0b_1;
         public static PieceColor GetColor(PieceType pieceType) => pieceType != PieceType.None ? (PieceColor)((int)pieceType & 0b_101) : PieceColor.None;
         public static PieceRank GetRank(PieceType pieceType) => pieceType != PieceType.None ? (PieceRank)((int)pieceType & 0b_110) : PieceRank.None;

@@ -4,11 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draughts.Rules
+namespace Draughts.GUI
 {
-    [Serializable]
-    public enum RulesType
+    public enum SelectorWindowType
     {
-        Czech,
+        TwoUsers,
+        AgainstBot,
+        OverNetwork,
+        Replay
     }
 }

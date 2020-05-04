@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draughts.Rules
+namespace Draughts.Players
 {
-    [Serializable]
-    public enum RulesType
+    public enum NetworkType
     {
-        Czech,
+        Server,
+        Client
     }
 }

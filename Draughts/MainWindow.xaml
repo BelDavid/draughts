@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Draughts"
         mc:Ignorable="d"
         Title="MainWindow" Height="600" Width="600" MinWidth="200" MinHeight="200"
-		  Loaded="MainWindow_Loaded" x:Name="mainWindow" WindowStartupLocation="CenterScreen" Closed="MainWindow_Closed">
+		  Loaded="MainWindow_Loaded" x:Name="mainWindow" WindowStartupLocation="CenterScreen" Closed="MainWindow_Closed" KeyDown="MainWindow_KeyDown">
     <Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="20"/>
@@ -16,17 +16,19 @@
 
 		<Menu Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="menu">
 			<MenuItem Header="New" Name="menu_new">
-				<MenuItem Header="2 Users" Name="menu_new_2users" Click="Menu_new_2users_Click"/>
-				<MenuItem Header="Against bot" Name="menu_new_bot"  Click="Menu_new_bot_Click"/>
+				<MenuItem Name="menu_new_2users"  Header="2 Local Users" Click="Menu_new_2users_Click"/>
+				<MenuItem Name="menu_new_bot"     Header="Against bot"   Click="Menu_new_bot_Click"/>
+				<MenuItem Name="menu_new_network" Header="Over Network"  Click="Menu_new_network_Click" IsEnabled="False"/>
+				<MenuItem Name="menu_new_replay"  Header="Replay"        Click="Menu_new_replay_Click"/>
 			</MenuItem>
-			<MenuItem Header="Exit" Name="menu_exit" Click="Menu_exit_Click"/>
-			<?MenuItem Header="Log" Name="menu_log" Click="Menu_log_Click"/?>
-			
+			<MenuItem Name="menu_saveReplay" Header="Save replay" Click="Menu_saveReplay_Click"/>
+			<MenuItem Name="menu_exit" Header="Exit" Click="Menu_exit_Click"/>
 		</Menu>
 
 		<ProgressBar Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="progressbar_bot" Value="100" />
 
 		<Canvas Grid.Row="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Name="canvas_board" Background="White"/>
 
+		<Label Name="label_pause" Content="PAUSED" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="0" FontWeight="Bold" FontSize="14" Visibility="Hidden"/>
 	</Grid>
 </Window>
