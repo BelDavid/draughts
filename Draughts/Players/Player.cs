@@ -35,8 +35,10 @@ namespace Draughts.Players
             Color = color;
             this.rules = rules;
             this.game = game;
-        }
 
+            AfterSetup();
+        }
+        protected virtual void AfterSetup() { }
 
 
         /// <summary>

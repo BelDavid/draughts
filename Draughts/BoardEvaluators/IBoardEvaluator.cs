@@ -11,11 +11,13 @@ namespace Draughts.BoardEvaluators
 {
     public interface IBoardEvaluator
     {
-        /* 
-         * Maximizing for white, minimaxing for Black
-         * Higher fitness is better for white, and lower is better for Black
-         */
 
-        double Evaluate(BoardState state, RulesType rules);
+        void Setup(GameRules gameRules);
+
+        /// <summary>
+        /// Maximizing for white, minimaxing for Black
+        /// Higher fitness is better for white, and lower is better for Black</summary>
+        /// <returns>fitness of the given BoardState</returns>
+        double Evaluate(BoardState state);
     }
 }

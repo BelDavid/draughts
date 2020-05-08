@@ -10,7 +10,9 @@ namespace Draughts.BoardEvaluators
 {
     public class BoardEvaluatorBasic : IBoardEvaluator
     {
-        public double Evaluate(BoardState state, RulesType rules)
+        
+
+        public double Evaluate(BoardState state)
         {
             double fit = 0f;
 
@@ -30,6 +32,11 @@ namespace Draughts.BoardEvaluators
             }
 
             return fit;
+        }
+
+        public void Setup(GameRules rules)
+        {
+            
         }
     }
 }

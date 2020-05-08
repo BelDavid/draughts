@@ -62,6 +62,7 @@
     </ApplicationDefinition>
     <Compile Include="BoardEvaluators\BoardEvaluatorBasic.cs" />
     <Compile Include="BoardEvaluators\BoardEvaluatorNeuralNetwork.cs" />
+    <Compile Include="BoardEvaluators\NeuralNetwork.cs" />
     <Compile Include="BoardState.cs" />
     <Compile Include="FinishReason.cs" />
     <Compile Include="Game\GameReplay.cs" />

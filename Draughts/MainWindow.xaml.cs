@@ -40,22 +40,54 @@ namespace Draughts
 
             formatter = new BinaryFormatter();
 
-            //int numberOfGames = 100;
+            //var weights = new double[1][,] { new double[65, 1] };
+            //for (int i = 0; i < 64; i++)
+            //{
+            //    weights[0][i, 0] = 1;
+            //}
+            //var nn = new NeuralNetwork(new int[] { 64, 1 }, weights, x => x);
+
+            //int numberOfGames = 300;
             //threads = new Thread[]
             //{
             //    new Thread(() => Simulate(
             //        "game0",
             //        RulesType.Czech,
-            //        id => new MinimaxBot(id, 5, new BoardEvaluatorBasic(), null, true, true),
-            //        id => new MinimaxBot(id, 4, new BoardEvaluatorBasic(), null, true, true),
+            //        () => new MinimaxBot("botNN3", 3, new BoardEvaluatorNeuralNetwork(_ => nn), null, true, true),
+            //        () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
+            //        numberOfGames,
+            //        null
+            //    )),
+            //    new Thread(() => Simulate(
+            //        "game1",
+            //        RulesType.Czech,
+            //        () => new MinimaxBot("botNN3", 3, new BoardEvaluatorNeuralNetwork(_ => nn), null, true, true),
+            //        () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
+            //        numberOfGames,
+            //        null
+            //    )),
+            //    new Thread(() => Simulate(
+            //        "game2",
+            //        RulesType.Czech,
+            //        () => new MinimaxBot("botNN3", 3, new BoardEvaluatorNeuralNetwork(_ => nn), null, true, true),
+            //        () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
+            //        numberOfGames,
+            //        null
+            //    )),
+            //    new Thread(() => Simulate(
+            //        "game3",
+            //        RulesType.Czech,
+            //        () => new MinimaxBot("botNN3", 3, new BoardEvaluatorNeuralNetwork(_ => nn), null, true, true),
+            //        () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
             //        numberOfGames,
             //        null
             //    )),
             //};
 
-            //gameControl = new GameControl("bots", RulesType.Czech, new RandomizedBot("bot0"), new RandomizedBot("bot1"));
-            //visualiser = gameControl.GetVisualiser(canvas_board);
-
+            if (threads != null)
+            {
+                menu.IsEnabled = false;
+            }
         }
 
         // Testing
@@ -77,22 +109,25 @@ namespace Draughts
             visualiser = null;
         }
 
-        private void Simulate(string id, RulesType rules, Func<string, Player> bot0Factory, Func<string, Player> bot1Factory, int numberOfRuns, MainWindow mainWindow)
+        private void Simulate(string id, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns, MainWindow mainWindow)
         {
-            //TerminateGame(false);
+            TerminateGame(false);
             Debug.WriteLine($"[{id}] simulation started");
 
             int bot0Wins = 0;
             int bot1Wins = 0;
             int tieCount = 0;
 
-            string bot0Id = "bot0";
-            string bot1Id = "bot1";
+            string bot0Id = null;
+            string bot1Id = null;
 
             for (int i = 0; i < numberOfRuns; i++)
             {
-                var bot0 = bot0Factory(bot0Id);
-                var bot1 = bot1Factory(bot1Id);
+                var bot0 = bot0Factory();
+                var bot1 = bot1Factory();
+
+                if (bot0Id is null) { bot0Id = bot0.id; }
+                if (bot1Id is null) { bot1Id = bot1.id; }
 
                 var firstPlayer = i % 2 == 0 ? bot0 : bot1;
                 var secondPlayer = i % 2 == 0 ? bot1 : bot0;
@@ -140,11 +175,21 @@ namespace Draughts
 
             lock (signaler_output)
             {
-                Debug.WriteLine($"[{id}] Final score:");
+                Debug.WriteLine($"[{id}] Final score ({numberOfRuns} runs):");
                 Debug.WriteLine($"[{id}] #'{bot0Id}' wins = {bot0Wins}");
                 Debug.WriteLine($"[{id}] #'{bot1Id}' wins = {bot1Wins}");
                 Debug.WriteLine($"[{id}] #ties = {tieCount}");
                 Debug.WriteLine($"[{id}] balance = {(bot0Wins - bot1Wins) / (float)numberOfRuns}");
+
+                using (var sw = new StreamWriter("../../../simulation_output.txt", true))
+                {
+                    sw.WriteLine($"[{id}] Final score ({numberOfRuns} runs):");
+                    sw.WriteLine($"[{id}] #'{bot0Id}' wins = {bot0Wins}");
+                    sw.WriteLine($"[{id}] #'{bot1Id}' wins = {bot1Wins}");
+                    sw.WriteLine($"[{id}] #ties = {tieCount}");
+                    sw.WriteLine($"[{id}] balance = {(bot0Wins - bot1Wins) / (float)numberOfRuns}");
+                    sw.WriteLine($"---------------------------------------------");
+                }
             }
         }
 

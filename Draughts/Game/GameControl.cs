@@ -203,24 +203,27 @@ namespace Draughts.Game
                 label_pause?.Dispatcher.Invoke(() => label_pause.Visibility = Visibility.Hidden);
             }
 
-            switch (finishReason)
+            if (visualiser != null)
             {
-                case FinishReason.OnePlayerWon:
-                    visualiser.SetEndMessage($"{Winner.Color} player wins");
-                    break;
-                case FinishReason.Terminated:
-                    visualiser.SetEndMessage("Game terminated");
-                    break;
-                case FinishReason.MoveLimitReached:
-                    visualiser.SetEndMessage("Tie - move limit reached");
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
+                switch (finishReason)
+                {
+                    case FinishReason.OnePlayerWon:
+                        visualiser.SetEndMessage($"{Winner.Color} player wins");
+                        break;
+                    case FinishReason.Terminated:
+                        visualiser.SetEndMessage("Game terminated");
+                        break;
+                    case FinishReason.MoveLimitReached:
+                        visualiser.SetEndMessage("Tie - move limit reached");
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
 
-            if (disposeVisualiserOnFinish && (!visualiser?.IsDisposed ?? false))
-            {
-                visualiser?.Dispose();
+                if (disposeVisualiserOnFinish && (!visualiser?.IsDisposed ?? false))
+                {
+                    visualiser?.Dispose();
+                }
             }
             
             //System.Diagnostics.Debug.WriteLine($"Game {gameId} Finished");

@@ -28,6 +28,13 @@ namespace Draughts.Players
         private readonly bool allowAlphaBetaCutting;
         private readonly IBoardEvaluator evaluator;
 
+        protected override void AfterSetup()
+        {
+            base.AfterSetup();
+
+            evaluator.Setup(game.gameRules);
+        }
+
         public override Move MakeMove(BoardState boardState)
         {
             double progress = 0d;
@@ -75,7 +82,7 @@ namespace Draughts.Players
                     ReportProgress(progress);
                 }
 
-                return new FitMove(evaluator.Evaluate(state, rules), null);
+                return new FitMove(evaluator.Evaluate(state), null);
             }
             else
             {
