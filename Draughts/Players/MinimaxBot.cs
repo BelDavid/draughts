@@ -12,6 +12,7 @@ namespace Draughts.Players
 {
     class MinimaxBot : Player
     {
+        public MinimaxBot(string id, int maxDepth, IBoardEvaluator evaluator, ProgressBar progressBar) : this(id, maxDepth, evaluator, progressBar, true, true) { }
         public MinimaxBot(string id, int maxDepth, IBoardEvaluator evaluator, ProgressBar progressBar, bool allowCaching, bool allowAlphaBetaCutting) : base(id)
         {
             this.maxDepth = maxDepth;

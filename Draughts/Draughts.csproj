@@ -64,6 +64,7 @@
     <Compile Include="BoardEvaluators\BoardEvaluatorNeuralNetwork.cs" />
     <Compile Include="BoardEvaluators\NeuralNetwork.cs" />
     <Compile Include="BoardState.cs" />
+    <Compile Include="EvolutionaryAlgorithm.cs" />
     <Compile Include="FinishReason.cs" />
     <Compile Include="Game\GameReplay.cs" />
     <Compile Include="GUI\AnimationType.cs" />
@@ -79,6 +80,7 @@
     <Compile Include="Players\NetworkType.cs" />
     <Compile Include="Players\RandomizedBot.cs" />
     <Compile Include="Players\ReplayBot.cs" />
+    <Compile Include="RandomExtensions.cs" />
     <Compile Include="Rules\CzechRules.cs" />
     <Compile Include="Pieces\PieceRank.cs" />
     <Compile Include="Game\GameControl.cs" />

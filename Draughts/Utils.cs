@@ -15,6 +15,7 @@ namespace Draughts
         private static readonly ThreadLocal<Random> _rand = new ThreadLocal<Random>(() => { lock (randOverlord) return new Random(randOverlord.Next()); });
         public static Random rand => _rand.Value;
 
+        public const string localFolderLocation = "../../../local";
         public const string replayFileExt = "drep";
 
         public static bool AnyPiece(PieceType pieceType) => (((int)pieceType >> 2) & 0b_1) == 0b_1;

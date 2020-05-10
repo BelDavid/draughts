@@ -7,16 +7,16 @@ using System.Threading.Tasks;
 
 namespace Draughts.BoardEvaluators
 {
+    [Serializable]
     public class NeuralNetwork
     {
         public readonly int[] neuronLayout;
         public readonly double[][,] weights;
         public readonly Func<double, double> activationFunction;
 
-        public NeuralNetwork(int[] neuronLayout, double[][,] weights, Func<double, double> activationFunction)
+        public NeuralNetwork(int[] neuronLayout, Func<double, double> activationFunction)
         {
             this.neuronLayout = neuronLayout ?? throw new ArgumentNullException("Argument neurons can not be null");
-            this.weights = weights ?? throw new ArgumentNullException("Argument weights can not be null");
             this.activationFunction = activationFunction;
 
             if (neuronLayout.Length < 2)
@@ -24,20 +24,38 @@ namespace Draughts.BoardEvaluators
                 throw new ArgumentException("Network has to have at least 2 layers");
             }
 
-            if (weights.Length != neuronLayout.Length - 1)
-            {
-                throw new ArgumentException();
-            }
+            weights = new double[neuronLayout.Length - 1][,];
             for (int i = 0; i < weights.Length; i++)
             {
-                if (weights[i] is null)
+                weights[i] = new double[neuronLayout[i] + 1, neuronLayout[i + 1]];
+            }
+        }
+        public NeuralNetwork(double[][,] weights, Func<double, double> activationFunction)
+        {
+            this.weights = weights ?? throw new ArgumentNullException("Argument weights can not be null");
+            this.activationFunction = activationFunction;
+
+            if (weights.Length < 1)
+            {
+                throw new ArgumentException("Network has to have at least 2 layers");
+            }
+
+            neuronLayout = new int[weights.Length + 1];
+            neuronLayout[0] = weights[0].GetLength(0) - 1;
+            for (int i = 0; i < weights.Length; i++)
+            {
+                if (weights[i] == null)
                 {
-                    throw new ArgumentException($"No element of argument weights can be null");
+                    throw new ArgumentException("No element can have null value");
                 }
-                if (weights[i].GetLength(0) != neuronLayout[i] + 1 || weights[i].GetLength(1) != neuronLayout[i + 1])
+                else if (i != 0)
                 {
-                    throw new ArgumentException($"Weights on {i}-th layer do not match layout given by neurons");
+                    if (weights[i].GetLength(0) != weights[i - 1].GetLength(1) + 1)
+                    {
+                        throw new ArgumentException($"Missmatch at layer {i}");
+                    }
                 }
+                neuronLayout[i + 1] = weights[i].GetLength(1);
             }
         }
 
@@ -74,6 +92,25 @@ namespace Draughts.BoardEvaluators
             }
 
             return layoutIn;
+        }
+
+        
+        public static NeuralNetwork GetNetworkWithRandomizedWeights(int[] layout, Func<double, double> activationFunction)
+        {
+            var nn = new NeuralNetwork(layout, activationFunction);
+
+            for (int i = 0; i < nn.weights.Length; i++)
+            {
+                for (int j = 0; j < nn.weights[i].GetLength(0); j++)
+                {
+                    for (int k = 0; k < nn.weights[i].GetLength(1); k++)
+                    {
+                        nn.weights[i][j, k] = Utils.rand.NextGaussian(1d, 1d);
+                    }
+                }
+            }
+
+            return nn;
         }
     }
 }
