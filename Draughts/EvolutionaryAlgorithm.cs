@@ -14,36 +14,59 @@ namespace Draughts
 {
     public class EvolutionaryAlgorithm
     {
-        public static readonly string folderPath_runs = $"{Utils.localFolderLocation}/runs";
+        public static readonly string folderPath_eva = $"{Utils.localFolderLocation}/eva";
 
         static EvolutionaryAlgorithm()
         {
-            if (!Directory.Exists(folderPath_runs))
+            if (!Directory.Exists(folderPath_eva))
             {
-                Directory.CreateDirectory(folderPath_runs);
+                Directory.CreateDirectory(folderPath_eva);
             }
         }
 
 
+        public readonly RulesType rulesType;
         public double mutationRate = 1d;
         public double mutationBitRate = 0.01d;
         public double crossoverRate = 0.2d;
         public int populationSize = 30;
-        public int numberOfElites = 0;
+        public int numberOfElites = 3;
         public int numberOfGameRounds = 50;
-
-        public int minimaxDepth = 3;
         public int numberOfCompetetiveMatches = 50;
 
-        private readonly string id;
-        private readonly Func<NeuralNetwork> networkFactory;
-        private readonly RulesType rulesType;
+        public int minimaxDepth = 1;
 
-        public EvolutionaryAlgorithm(string id, Func<NeuralNetwork> networkFactory, RulesType rulesType)
+        private readonly string id;
+        private readonly string folderPath_run;
+        private readonly bool paralelisedMatches;
+        private readonly Func<NeuralNetwork> networkFactory;
+
+        public EvolutionaryAlgorithm(string id, Func<NeuralNetwork> networkFactory, RulesType rulesType, bool paralelisedMatches)
         {
             this.id = id;
             this.networkFactory = networkFactory;
             this.rulesType = rulesType;
+            this.paralelisedMatches = paralelisedMatches;
+
+            folderPath_run = $"{folderPath_eva}/run_{id}";
+            if (Directory.Exists(folderPath_run))
+            {
+                throw new ArgumentException($"ID {id} already used.");
+            }
+
+            Directory.CreateDirectory(folderPath_run);
+            using (var sw = new StreamWriter($"{folderPath_run}/settings.txt"))
+            {
+                sw.WriteLine($"id = {id}");
+                sw.WriteLine($"rulesType = {Enum.GetName(typeof(RulesType), rulesType)}");
+                sw.WriteLine($"mutationRate = {mutationRate}"); 
+                sw.WriteLine($"mutationBitRate = {mutationBitRate}");
+                sw.WriteLine($"crossoverRate = {crossoverRate}");
+                sw.WriteLine($"populationSize = {populationSize}");
+                sw.WriteLine($"numberOfElites = {numberOfElites}");
+                sw.WriteLine($"numberOfGameRounds = {numberOfGameRounds}");
+                sw.WriteLine($"numberOfCompetetiveMatches = {numberOfCompetetiveMatches}");
+            }
         }
 
 
@@ -55,12 +78,12 @@ namespace Draughts
                 startingPopulation.Add(networkFactory());
             }
             var generation = CalculateFitnesses(startingPopulation);
+            Sort(generation);
             Report(generation, 0);
 
             for (int i = 1; i < numberOfGenerations; i++)
             {
                 generation = GetNextGen(generation);
-
                 Report(generation, i);
             }
 
@@ -71,6 +94,14 @@ namespace Draughts
         {
             // SELECT
             var matingPool = SelectRulete(currGen);
+
+            // ELITISM | Fittest entities goes automatically to mating pool
+            var elites = Math.Min(numberOfElites, populationSize);
+            for (int i = 0; i < elites; i++)
+            {
+                matingPool.Add(currGen[i].neuralNetwork);
+            }
+            matingPool.RemoveRange(currGen.Count, elites);
 
             // CROSSOVER
             for (int j = 0; j + 1 < matingPool.Count; j += 2)
@@ -85,16 +116,7 @@ namespace Draughts
             // Calculate fitnesses
             var nextGen = CalculateFitnesses(matingPool);
 
-            // ELITISM | Fittest entity survives to next generation
-            var elites = Math.Min(numberOfElites, populationSize);
-            for (int i = 0; i < elites; i++)
-            {
-                nextGen.Add(currGen[i]);
-            }
-
             Sort(nextGen);
-
-            nextGen.RemoveRange(currGen.Count, elites);
 
             return nextGen;
         }
@@ -179,22 +201,33 @@ namespace Draughts
         {
             var nf = new NNFit[networks.Count];
 
-            // Parallel.For(0, networks.Count, i =>
-            for (int i = 0; i < networks.Count; i++)
+            void sim(int i)
             {
-                (int wins, _, _) = MainWindow.Simulate(
+                var gameStats = MainWindow.Simulate(
                     $"{id}_sim{i}",
                     rulesType,
                     () => new MinimaxBot($"nn_bot{minimaxDepth}", minimaxDepth, new BoardEvaluatorNeuralNetwork(_ => networks[i]), null, true, true),
                     () => new MinimaxBot($"mx_bot{minimaxDepth}", minimaxDepth, new BoardEvaluatorBasic(), null, true, true),
                     numberOfCompetetiveMatches,
-                    null,
-                    false
+                    null
                 );
 
-                nf[i] = new NNFit(networks[i], wins);
+                nf[i] = new NNFit(networks[i], gameStats);
             }
-            //);
+
+            if (paralelisedMatches)
+            {
+                Parallel.For(0, networks.Count, sim);
+            }
+            else
+            {
+                for (int i = 0; i < networks.Count; i++)
+                {
+                    sim(i);
+                }
+            }
+
+            
 
             return nf.ToList();
         }
@@ -202,18 +235,43 @@ namespace Draughts
         private void Report(List<NNFit> generation, int genNum)
         {
             Debug.WriteLine($"[{id}] gen{genNum} | best: {generation.First().fitness}/{numberOfCompetetiveMatches}");
+
+            using (var sw = new StreamWriter($"{folderPath_run}/log.txt", true))
+            {
+                sw.WriteLine($"GenNumber = {genNum}");
+
+                for (int i = 0; i < generation.Count; i++)
+                {
+                    var (wins, ties, loses) = generation[i].gameStats;
+                    sw.WriteLine($"network{i} - w:{wins}|t:{ties}|l:{loses}");
+                }
+
+                sw.WriteLine("------------------------------------");
+            }
+
+            for (int i = 0; i < generation.Count; i++)
+            {
+                var nn = generation[i].neuralNetwork;
+
+                using (var fs = new FileStream($"{folderPath_run}/gen{genNum}_net{i}.nn", FileMode.Create, FileAccess.Write))
+                {
+                    Utils.binaryFormatter.Serialize(fs, nn);
+                }
+            }
         }
     }
 
     public class NNFit
     {
         public NeuralNetwork neuralNetwork;
+        public (int wins, int ties, int loses) gameStats;
         public double fitness;
 
-        public NNFit(NeuralNetwork neuralNetwork, double fitness)
+        public NNFit(NeuralNetwork neuralNetwork, (int wins, int ties, int loses) gameStats)
         {
             this.neuralNetwork = neuralNetwork;
-            this.fitness = fitness;
+            this.gameStats = gameStats;
+            this.fitness = gameStats.wins;
         }
     }
 }

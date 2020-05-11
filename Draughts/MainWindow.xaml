@@ -20,7 +20,7 @@
 			<MenuItem Header="New" Name="menu_new">
 				<MenuItem Name="menu_new_2users"  Header="2 Local Users" Click="Menu_new_2users_Click"/>
 				<MenuItem Name="menu_new_bot"     Header="Against bot"   Click="Menu_new_bot_Click"/>
-				<MenuItem Name="menu_new_network" Header="Over Network"  Click="Menu_new_network_Click" IsEnabled="False"/>
+				<MenuItem Name="menu_new_online" Header="Online"  Click="Menu_new_online_Click" IsEnabled="False"/>
 				<MenuItem Name="menu_new_replay"  Header="Replay"        Click="Menu_new_replay_Click"/>
 			</MenuItem>
 			<MenuItem Name="menu_saveReplay" Header="Save replay" Click="Menu_saveReplay_Click"/>

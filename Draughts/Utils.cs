@@ -3,6 +3,8 @@ using Draughts.Rules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +16,9 @@ namespace Draughts
         private static readonly Random randOverlord = new Random();
         private static readonly ThreadLocal<Random> _rand = new ThreadLocal<Random>(() => { lock (randOverlord) return new Random(randOverlord.Next()); });
         public static Random rand => _rand.Value;
+
+        public static readonly IFormatter binaryFormatter = new BinaryFormatter();
+
 
         public const string localFolderLocation = "../../../local";
         public const string replayFileExt = "drep";

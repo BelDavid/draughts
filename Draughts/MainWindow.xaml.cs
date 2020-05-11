@@ -42,12 +42,15 @@ namespace Draughts
         private readonly object signaler_output = new object();
 
         private Thread[] threads;
-        private readonly IFormatter formatter = new BinaryFormatter();
+
+        public string defaultTitle = "Draughts";
 
 
         public MainWindow()
         {
             InitializeComponent();
+
+            Title = defaultTitle;
 
 #if SIMULATION || EVA
             if (!Directory.Exists(Utils.localFolderLocation))
@@ -66,8 +69,7 @@ namespace Draughts
                     () => new MinimaxBot("botBasic5", 5, new BoardEvaluatorBasic(), null, true, true),
                     () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
                     numberOfGames,
-                    null,
-                    true
+                    null
                 )),
                 new Thread(() => Simulate(
                     "game1",
@@ -75,8 +77,7 @@ namespace Draughts
                     () => new MinimaxBot("botBasic5", 5, new BoardEvaluatorBasic(), null, true, true),
                     () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
                     numberOfGames,
-                    null,
-                    true
+                    null
                 )),
                 new Thread(() => Simulate(
                     "game2",
@@ -84,8 +85,7 @@ namespace Draughts
                     () => new MinimaxBot("botBasic5", 5, new BoardEvaluatorBasic(), null, true, true),
                     () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
                     numberOfGames,
-                    null,
-                    true
+                    null
                 )),
                 new Thread(() => Simulate(
                     "game3",
@@ -93,8 +93,7 @@ namespace Draughts
                     () => new MinimaxBot("botBasic5", 5, new BoardEvaluatorBasic(), null, true, true),
                     () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
                     numberOfGames,
-                    null,
-                    true
+                    null
                 )),
             };
             menu.IsEnabled = false;
@@ -139,21 +138,16 @@ namespace Draughts
         }
 
 
-        public static (int, int, int) Simulate(string id, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns, MainWindow mainWindow, bool log)
+        public static (int bot0Wins, int ties, int bot1Wins) Simulate(string id, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns, MainWindow mainWindow)
         {
             if (mainWindow != null)
             {
                 mainWindow.TerminateGame(false);
             }
 
-            if (log)
-            {
-                Debug.WriteLine($"[{id}] simulation started");
-            }
-
             int bot0Wins = 0;
-            int bot1Wins = 0;
             int tieCount = 0;
+            int bot1Wins = 0;
 
             string bot0Id = null;
             string bot1Id = null;
@@ -174,8 +168,11 @@ namespace Draughts
 
                 if (mainWindow != null)
                 {
+                    var startingColor = gameControl.gameRules.GetStartingColor();
+
                     mainWindow.Dispatcher.Invoke(() =>
                     {
+                        mainWindow.Title = $"{mainWindow.defaultTitle} | Simulation: {i+1}/{numberOfRuns} | {startingColor}: {firstPlayer.id} | {Utils.SwapColor(startingColor)}: {secondPlayer.id}";
                         visualiser = gameControl.GetVisualiser(mainWindow);
                         visualiser.animationSpeed = 10;
                     });
@@ -195,76 +192,73 @@ namespace Draughts
                     if (gameControl.Winner == bot0)
                     {
                         bot0Wins += 1;
-
-                        if (log)
-                        {
-                            Debug.WriteLine($"[{id}] '{bot0Id}' won");
-                        }
                     }
                     else if (gameControl.Winner == bot1)
                     {
                         bot1Wins += 1;
-                        if (log)
-                        {
-                            Debug.WriteLine($"[{id}] '{bot1Id}' won");
-                        }
                     }
                 }
                 else if (finishReason == FinishReason.MoveLimitReached)
                 {
                     tieCount += 1;
-                    if (log)
-                    {
-                        Debug.WriteLine($"[{id}] tie");
-                    }
                 }
             }
 
-            if (log)
+            if (mainWindow != null)
             {
-                lock (mainWindow.signaler_output)
-                {
-                    Debug.WriteLine($"[{id}] Final score ({numberOfRuns} runs):");
-                    Debug.WriteLine($"[{id}] #'{bot0Id}' wins = {bot0Wins}");
-                    Debug.WriteLine($"[{id}] #'{bot1Id}' wins = {bot1Wins}");
-                    Debug.WriteLine($"[{id}] #ties = {tieCount}");
-                    Debug.WriteLine($"[{id}] balance = {(bot0Wins - bot1Wins) / (float)numberOfRuns}");
-
-                    using (var sw = new StreamWriter($"{Utils.localFolderLocation}/simulation_output.txt", true))
-                    {
-                        sw.WriteLine($"[{id}] Final score ({numberOfRuns} runs):");
-                        sw.WriteLine($"[{id}] #'{bot0Id}' wins = {bot0Wins}");
-                        sw.WriteLine($"[{id}] #'{bot1Id}' wins = {bot1Wins}");
-                        sw.WriteLine($"[{id}] #ties = {tieCount}");
-                        sw.WriteLine($"[{id}] balance = {(bot0Wins - bot1Wins) / (float)numberOfRuns}");
-                        sw.WriteLine($"---------------------------------------------");
-                    }
-                }
+                mainWindow.Dispatcher.Invoke(() => { mainWindow.Title = mainWindow.defaultTitle; });
             }
 
-            return (bot0Wins, bot1Wins, tieCount);
+            return (bot0Wins, tieCount, bot1Wins);
         }
 
         private void TrainNNWithEvAlg()
         {
-            TerminateGame(false);
-            var eva = new EvolutionaryAlgorithm("test", () => NeuralNetwork.GetNetworkWithRandomizedWeights(new int[] { 64, 10, 10, 1 }, i => i), RulesType.Czech)
-            {
-                minimaxDepth = 2,
-                populationSize = 10,
-            };
-            var gen = eva.Run(50);
+            var id = "test0";
 
-            Dispatcher.Invoke(() =>
+            TerminateGame(false);
+            var eva = new EvolutionaryAlgorithm(id, () => NeuralNetwork.GetNetworkWithRandomizedWeights(new int[] { 64, 10, 10, 1 }, i => i), RulesType.Czech, true)
             {
-                gameControl = new GameControl("nngame", RulesType.Czech, new User("user"), new MinimaxBot("nn2", 2, new BoardEvaluatorNeuralNetwork(_ => gen.First().neuralNetwork), progressbar_bot));
-                visualiser = gameControl.GetVisualiser(this);
-                menu.IsEnabled = true;
-            });
+                
+            };
+            var gen = eva.Run(10);
+
+            var nn = gen.First().neuralNetwork;
+            var (network_wins, ties, basicEval_Wins) = Simulate(
+                id,
+                RulesType.Czech,
+                () => new MinimaxBot("nn5", 5, new BoardEvaluatorNeuralNetwork( _ => nn), progressbar_bot),
+                () => new MinimaxBot("bb5", 5, new BoardEvaluatorBasic(), progressbar_bot),
+                20,
+                this
+            );
+
+            Debug.WriteLine($"network: {network_wins} | ties: {ties} | basicEval: {basicEval_Wins}");
 
             gameControl?.Run();
         }
 
+
+        public NeuralNetwork LoadNetwork(string path)
+        {
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
+            try
+            {
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+                {
+                    return (NeuralNetwork)Utils.binaryFormatter.Deserialize(fs);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error reading from {path}\n{ex.Message}");
+                return null;
+            }
+        }
 
         private void TerminateGame(bool force)
         {
@@ -353,7 +347,7 @@ namespace Draughts
             }
         }
 
-        private void Menu_new_network_Click(object sender, RoutedEventArgs e)
+        private void Menu_new_online_Click(object sender, RoutedEventArgs e)
         {
             var selector = new SelectorWindow(GameType.OverNetwork, this);
             selector.ShowDialog();
@@ -384,7 +378,7 @@ namespace Draughts
                 {
                     using (var fs = new FileStream(selector.filePath, FileMode.Open, FileAccess.Read))
                     {
-                        var gameReplay = (GameReplay)formatter.Deserialize(fs);
+                        var gameReplay = (GameReplay)Utils.binaryFormatter.Deserialize(fs);
 
                         gameControl = new GameControl("replay", gameReplay, selector.animationSpeed, label_pause);
                         visualiser = gameControl.GetVisualiser(this);
@@ -439,7 +433,7 @@ namespace Draughts
                         if (fd.ShowDialog() ?? false)
                         {
                             var fs = new FileStream(fd.FileName, FileMode.Create, FileAccess.Write);
-                            formatter.Serialize(fs, gameControl.GetReplay());
+                            Utils.binaryFormatter.Serialize(fs, gameControl.GetReplay());
                         }
                     }
                     catch (Exception ex)
