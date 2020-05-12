@@ -1,5 +1,5 @@
 ﻿//#define SIMULATION
-#define EVA
+//#define EVA
 
 using Draughts.Game;
 using Draughts.Pieces;
@@ -39,7 +39,6 @@ namespace Draughts
     {
         private Visualiser visualiser;
         private GameControl gameControl;
-        private readonly object signaler_output = new object();
 
         private Thread[] threads;
 
@@ -52,49 +51,37 @@ namespace Draughts
 
             Title = defaultTitle;
 
-#if SIMULATION || EVA
-            if (!Directory.Exists(Utils.localFolderLocation))
-            {
-                Directory.CreateDirectory(Utils.localFolderLocation);
-            }
-#endif
-
 #if SIMULATION
-            int numberOfGames = 100;
+            var net0 = "test2/gen9_net0";
+            var net1 = "test2/gen0_net0";
+            var nn0 = LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{net0}.nn");
+            var nn1 = LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{net1}.nn");
+            int numberOfGames = 1000;
+            int depth = 1;
+
+            void run(string simulationID)
+            {
+                string bot0Id = null;
+                string bot1Id = null;
+
+                var (networkWins, ties, basicWins) = Simulate(
+                    simulationID,
+                    RulesType.Czech,
+                    () => new MinimaxBot(bot0Id = net0, depth, new BoardEvaluatorNeuralNetwork(nn0), null),
+                    () => new MinimaxBot(bot1Id = net1, depth, new BoardEvaluatorNeuralNetwork(nn1), null),
+                    //() => new MinimaxBot(bot1Id = "basic", depth, new BoardEvaluatorBasic(), null),
+                    numberOfGames,
+                    null
+                );
+                Debug.WriteLine($"[{simulationID}] {bot0Id}: {networkWins} | ties: {ties} | {bot1Id}: {basicWins}");
+            }
+
             threads = new Thread[]
             {
-                new Thread(() => Simulate(
-                    "game0",
-                    RulesType.Czech,
-                    () => new MinimaxBot("botBasic5", 5, new BoardEvaluatorBasic(), null, true, true),
-                    () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
-                    numberOfGames,
-                    null
-                )),
-                new Thread(() => Simulate(
-                    "game1",
-                    RulesType.Czech,
-                    () => new MinimaxBot("botBasic5", 5, new BoardEvaluatorBasic(), null, true, true),
-                    () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
-                    numberOfGames,
-                    null
-                )),
-                new Thread(() => Simulate(
-                    "game2",
-                    RulesType.Czech,
-                    () => new MinimaxBot("botBasic5", 5, new BoardEvaluatorBasic(), null, true, true),
-                    () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
-                    numberOfGames,
-                    null
-                )),
-                new Thread(() => Simulate(
-                    "game3",
-                    RulesType.Czech,
-                    () => new MinimaxBot("botBasic5", 5, new BoardEvaluatorBasic(), null, true, true),
-                    () => new MinimaxBot("botBasic3", 3, new BoardEvaluatorBasic(), null, true, true),
-                    numberOfGames,
-                    null
-                )),
+                new Thread(() => run("sim0")),
+                new Thread(() => run("sim1")),
+                new Thread(() => run("sim2")),
+                new Thread(() => run("sim3")),
             };
             menu.IsEnabled = false;
 #endif
@@ -138,7 +125,7 @@ namespace Draughts
         }
 
 
-        public static (int bot0Wins, int ties, int bot1Wins) Simulate(string id, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns, MainWindow mainWindow)
+        public static (int bot0Wins, int ties, int bot1Wins) Simulate(string simulationID, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns, MainWindow mainWindow)
         {
             if (mainWindow != null)
             {
@@ -163,7 +150,7 @@ namespace Draughts
                 var firstPlayer = i % 2 == 0 ? bot0 : bot1;
                 var secondPlayer = i % 2 == 0 ? bot1 : bot0;
 
-                var gameControl = new GameControl($"{id}", rules, firstPlayer, secondPlayer);
+                var gameControl = new GameControl($"{simulationID}", rules, firstPlayer, secondPlayer);
                 Visualiser visualiser = null;
 
                 if (mainWindow != null)
@@ -172,7 +159,7 @@ namespace Draughts
 
                     mainWindow.Dispatcher.Invoke(() =>
                     {
-                        mainWindow.Title = $"{mainWindow.defaultTitle} | Simulation: {i+1}/{numberOfRuns} | {startingColor}: {firstPlayer.id} | {Utils.SwapColor(startingColor)}: {secondPlayer.id}";
+                        mainWindow.Title = $"{mainWindow.defaultTitle} | Simulation [{simulationID}]: {i+1}/{numberOfRuns} | {startingColor}: {firstPlayer.id} | {Utils.SwapColor(startingColor)}: {secondPlayer.id}";
                         visualiser = gameControl.GetVisualiser(mainWindow);
                         visualiser.animationSpeed = 10;
                     });
@@ -214,26 +201,28 @@ namespace Draughts
 
         private void TrainNNWithEvAlg()
         {
-            var id = "test0";
+            var id = "test3";
 
             TerminateGame(false);
-            var eva = new EvolutionaryAlgorithm(id, () => NeuralNetwork.GetNetworkWithRandomizedWeights(new int[] { 64, 10, 10, 1 }, i => i), RulesType.Czech, true)
+            var eva = new EvolutionaryAlgorithm(id, new int[] { 10, 10, 10, 10, }, RulesType.Czech)
             {
-                
+                paralelisedMatches = true,
+                minimaxDepth = 2,
             };
-            var gen = eva.Run(10);
+            var gen = eva.Run();
 
             var nn = gen.First().neuralNetwork;
+            var depth = 1;
             var (network_wins, ties, basicEval_Wins) = Simulate(
                 id,
                 RulesType.Czech,
-                () => new MinimaxBot("nn5", 5, new BoardEvaluatorNeuralNetwork( _ => nn), progressbar_bot),
-                () => new MinimaxBot("bb5", 5, new BoardEvaluatorBasic(), progressbar_bot),
-                20,
-                this
+                () => new MinimaxBot($"network", depth, new BoardEvaluatorNeuralNetwork(nn), null),
+                () => new MinimaxBot($"basic", depth, new BoardEvaluatorBasic(), null),
+                1000,
+                null
             );
 
-            Debug.WriteLine($"network: {network_wins} | ties: {ties} | basicEval: {basicEval_Wins}");
+            Debug.WriteLine($"[{id}] network: {network_wins} | ties: {ties} | basic: {basicEval_Wins}");
 
             gameControl?.Run();
         }
@@ -287,7 +276,7 @@ namespace Draughts
         }
 
         
-        private void Menu_new_2users_Click(object sender, RoutedEventArgs e)
+        private void Menu_new_local_Click(object sender, RoutedEventArgs e)
         {
             var selector = new SelectorWindow(GameType.Local, this);
             selector.ShowDialog();
@@ -315,20 +304,46 @@ namespace Draughts
 
                 Player user = new User("user");
                 Player bot;
+
+                IBoardEvaluator evaluator;
+                switch (selector.boardEvaluator)
+                {
+                    case BoardEvaluatorType.Basic:
+                        evaluator = new BoardEvaluatorBasic();
+                        break;
+
+                    case BoardEvaluatorType.NeuralNetwork:
+                        var nn = LoadNetwork(selector.neuralNetworkFilePath);
+                        if (nn != null)
+                        {
+                            evaluator = new BoardEvaluatorNeuralNetwork(nn);
+                        }
+                        else
+                        {
+                            return;
+                        }
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
+                }
+
                 switch (selector.botDifficulty)
                 {
                     case BotDifficulty.Randomized:
                         bot = new RandomizedBot("randbot");
                         break;
+
                     case BotDifficulty.Easy:
-                        bot = new MinimaxBot("minimax3", 3, new BoardEvaluatorBasic(), progressbar_bot, true, true);
+                        bot = new MinimaxBot("minimax3", 3, evaluator, progressbar_bot, true, true);
                         break;
+
                     case BotDifficulty.Medium:
-                        bot = new MinimaxBot("minimax7", 7, new BoardEvaluatorBasic(), progressbar_bot, true, true);
+                        bot = new MinimaxBot("minimax7", 7, evaluator, progressbar_bot, true, true);
                         break;
 #if DEBUG
                     case BotDifficulty.Depth10:
-                        bot = new MinimaxBot("minimax10", 10, new BoardEvaluatorBasic(), progressbar_bot, true, true);
+                        bot = new MinimaxBot("minimax10", 10, evaluator, progressbar_bot, true, true);
                         break;
 #endif
                     default:
@@ -376,7 +391,7 @@ namespace Draughts
 
                 try
                 {
-                    using (var fs = new FileStream(selector.filePath, FileMode.Open, FileAccess.Read))
+                    using (var fs = new FileStream(selector.replayFilePath, FileMode.Open, FileAccess.Read))
                     {
                         var gameReplay = (GameReplay)Utils.binaryFormatter.Deserialize(fs);
 
@@ -409,7 +424,7 @@ namespace Draughts
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error deserializing Replay from file {selector.filePath}\n{ex.Message}");
+                    MessageBox.Show($"Error deserializing Replay from file {selector.replayFilePath}\n{ex.Message}");
                 }
             }
         }

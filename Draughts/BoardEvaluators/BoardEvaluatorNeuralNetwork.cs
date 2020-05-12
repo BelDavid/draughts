@@ -10,20 +10,24 @@ namespace Draughts.BoardEvaluators
 {
     class BoardEvaluatorNeuralNetwork : IBoardEvaluator
     {
-        private readonly Func<RulesType, NeuralNetwork> neuralNetworkFactory;
         private NeuralNetwork neuralNetwork;
 
-        public BoardEvaluatorNeuralNetwork(Func<RulesType, NeuralNetwork> neuralNetworkFactory)
+        public BoardEvaluatorNeuralNetwork(NeuralNetwork neuralNetwork)
         {
-            this.neuralNetworkFactory = neuralNetworkFactory ?? throw new ArgumentNullException("Argument neuralNetworkFactory can not be null");
+            this.neuralNetwork = neuralNetwork ?? throw new ArgumentNullException("Argument neuralNetwork can not be null");
+
+            if (neuralNetwork.neuronLayout.Last() != 1)
+            {
+                throw new ArgumentException("Last layer of the network must have exactly 1 neuron");
+            }
         }
 
 
         public double Evaluate(BoardState state)
         {
-            var input = new double[state.NumberOfColumns * state.NumberOfRows];
+            var input = new double[state.NumberOfColumns * state.NumberOfRows / 2];
 
-            foreach (var (pos, pieceType) in state.IterateBoard())
+            foreach (var (pos, pieceType) in state.IterateValidPlacesOnBoard())
             {
                 if (pieceType != PieceType.None)
                 {
@@ -32,8 +36,8 @@ namespace Draughts.BoardEvaluators
                           : 0d;
 
 
-                    input[pos.column + pos.row * state.NumberOfColumns]
-                         = Utils.GetColor(pieceType) == PieceColor.White ? val
+                    input[(pos.column + pos.row * state.NumberOfColumns) / 2] = 
+                        Utils.GetColor(pieceType) == PieceColor.White ? val
                          : Utils.GetColor(pieceType) == PieceColor.Black ? -val
                          : 0d;
                 }
@@ -41,17 +45,15 @@ namespace Draughts.BoardEvaluators
             return neuralNetwork.Evaluate(input)[0];
         }
 
-        public void Setup(GameRules rules)
+        public void Validate(GameRules rules)
         {
-            neuralNetwork = neuralNetworkFactory(rules.rulesType) ?? throw new Exception("neuralNetwork can not be null");
-
-            if (neuralNetwork.neuronLayout.Last() != 1)
+            if (rules.rulesType != neuralNetwork.rulesType)
             {
-                throw new ArgumentException("Last layer of the network must have exactly 1 neuron");
+                throw new Exception("Network is designed for different rules");
             }
-            if (rules.numberOfColumns * rules.numberOfRows != neuralNetwork.neuronLayout[0])
+            if (rules.numberOfColumns * rules.numberOfRows / 2 != neuralNetwork.neuronLayout[0])
             {
-                throw new Exception("Missmatch between number of neurons on a first layer and number of places on the board");
+                throw new Exception("Missmatch between number of neurons on a first layer and number of valid places on the board");
             }
         }
     }

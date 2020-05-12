@@ -33,7 +33,7 @@ namespace Draughts.Players
         {
             base.AfterSetup();
 
-            evaluator.Setup(game.gameRules);
+            evaluator.Validate(game.gameRules);
         }
 
         public override Move MakeMove(BoardState boardState)

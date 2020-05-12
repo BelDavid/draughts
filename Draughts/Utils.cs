@@ -20,8 +20,9 @@ namespace Draughts
         public static readonly IFormatter binaryFormatter = new BinaryFormatter();
 
 
-        public const string localFolderLocation = "../../../local";
+
         public const string replayFileExt = "drep";
+        public const string neuralNetworkFileExt = "nn";
 
         public static bool AnyPiece(PieceType pieceType) => (((int)pieceType >> 2) & 0b_1) == 0b_1;
         public static PieceColor GetColor(PieceType pieceType) => pieceType != PieceType.None ? (PieceColor)((int)pieceType & 0b_101) : PieceColor.None;

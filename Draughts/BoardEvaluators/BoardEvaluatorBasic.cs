@@ -2,6 +2,7 @@
 using Draughts.Rules;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,7 +17,7 @@ namespace Draughts.BoardEvaluators
         {
             double fit = 0f;
 
-            foreach (var (pos, pieceType) in state.IterateBoard())
+            foreach (var (pos, pieceType) in state.IterateValidPlacesOnBoard())
             {
                 if (pieceType != PieceType.None)
                 {
@@ -34,7 +35,7 @@ namespace Draughts.BoardEvaluators
             return fit;
         }
 
-        public void Setup(GameRules rules)
+        public void Validate(GameRules rules)
         {
             
         }

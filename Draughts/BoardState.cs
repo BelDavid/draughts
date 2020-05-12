@@ -191,6 +191,16 @@ namespace Draughts
                 }
             }
         }
+        public IEnumerable<(Position pos, PieceType pieceType)> IterateValidPlacesOnBoard()
+        {
+            foreach (var (pos, pieceType) in IterateBoard())
+            {
+                if (pos.column + pos.row % 2 == 1)
+                {
+                    yield return (pos, pieceType);
+                }
+            }
+        }
 
 
 

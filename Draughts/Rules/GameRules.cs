@@ -12,8 +12,10 @@ namespace Draughts.Rules
         public readonly byte numberOfRows, numberOfColumns;
         public readonly RulesType rulesType;
 
-        public GameRules(RulesType rulesType, byte numberOfRows, byte numberOfColumns)
+        public GameRules(RulesType rulesType)
         {
+            (numberOfColumns, numberOfRows) = GetBoardDimensions(rulesType);
+
             if (numberOfColumns * numberOfRows > 128)
             {
                 throw new ArgumentException("Number of places on the board can not exceed 128");
@@ -24,12 +26,22 @@ namespace Draughts.Rules
             }
 
             this.rulesType = rulesType;
-            this.numberOfRows = numberOfRows;
-            this.numberOfColumns = numberOfColumns;
         }
 
         public abstract List<Move> GetAvaiableMoves(BoardState state);
         public abstract BoardState GetInitialBoardState();
         public abstract Pieces.PieceColor GetStartingColor();
+
+        public static (byte numberOfColumns, byte numberOfRows) GetBoardDimensions(RulesType rules)
+        {
+            switch (rules)
+            {
+                case RulesType.Czech:
+                    return (8, 8);
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
     }
 }

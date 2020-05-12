@@ -12,7 +12,7 @@ namespace Draughts.BoardEvaluators
     public interface IBoardEvaluator
     {
 
-        void Setup(GameRules gameRules);
+        void Validate(GameRules gameRules);
 
         /// <summary>
         /// Maximizing for white, minimaxing for Black

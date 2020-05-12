@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Draughts.Rules;
+using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,9 +14,11 @@ namespace Draughts.BoardEvaluators
         public readonly int[] neuronLayout;
         public readonly double[][,] weights;
         public readonly Func<double, double> activationFunction;
+        public readonly RulesType rulesType;
 
-        public NeuralNetwork(int[] neuronLayout, Func<double, double> activationFunction)
+        public NeuralNetwork(int[] neuronLayout, RulesType rulesType, Func<double, double> activationFunction)
         {
+            this.rulesType = rulesType;
             this.neuronLayout = neuronLayout ?? throw new ArgumentNullException("Argument neurons can not be null");
             this.activationFunction = activationFunction;
 
@@ -30,8 +33,9 @@ namespace Draughts.BoardEvaluators
                 weights[i] = new double[neuronLayout[i] + 1, neuronLayout[i + 1]];
             }
         }
-        public NeuralNetwork(double[][,] weights, Func<double, double> activationFunction)
+        public NeuralNetwork(double[][,] weights, RulesType rulesType, Func<double, double> activationFunction)
         {
+            this.rulesType = rulesType;
             this.weights = weights ?? throw new ArgumentNullException("Argument weights can not be null");
             this.activationFunction = activationFunction;
 
@@ -92,25 +96,6 @@ namespace Draughts.BoardEvaluators
             }
 
             return layoutIn;
-        }
-
-        
-        public static NeuralNetwork GetNetworkWithRandomizedWeights(int[] layout, Func<double, double> activationFunction)
-        {
-            var nn = new NeuralNetwork(layout, activationFunction);
-
-            for (int i = 0; i < nn.weights.Length; i++)
-            {
-                for (int j = 0; j < nn.weights[i].GetLength(0); j++)
-                {
-                    for (int k = 0; k < nn.weights[i].GetLength(1); k++)
-                    {
-                        nn.weights[i][j, k] = Utils.rand.NextGaussian(1d, 1d);
-                    }
-                }
-            }
-
-            return nn;
         }
     }
 }

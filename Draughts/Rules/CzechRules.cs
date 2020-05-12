@@ -10,10 +10,7 @@ namespace Draughts.Rules
 {
    public class CzechRules : GameRules
    {
-      public CzechRules() : base(RulesType.Czech, 8, 8)
-      {
-
-      }
+      public CzechRules() : base(RulesType.Czech) { }
 
       public override PieceColor GetStartingColor() => PieceColor.White;
       /* Key rules:

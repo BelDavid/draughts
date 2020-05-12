@@ -1,6 +1,7 @@
 ﻿using Draughts.BoardEvaluators;
 using Draughts.Players;
 using Draughts.Rules;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,7 +15,7 @@ namespace Draughts
 {
     public class EvolutionaryAlgorithm
     {
-        public static readonly string folderPath_eva = $"{Utils.localFolderLocation}/eva";
+        public static string folderPath_eva = $"../../../local/eva";
 
         static EvolutionaryAlgorithm()
         {
@@ -24,31 +25,42 @@ namespace Draughts
             }
         }
 
-
         public readonly RulesType rulesType;
+        public readonly int[] neuronLayout;
         public double mutationRate = 1d;
         public double mutationBitRate = 0.01d;
         public double crossoverRate = 0.2d;
         public int populationSize = 30;
         public int numberOfElites = 3;
+        public int numberOfGenerations = 10;
         public int numberOfGameRounds = 50;
         public int numberOfCompetetiveMatches = 50;
 
-        public int minimaxDepth = 1;
+        public int minimaxDepth = 2;
+        public bool paralelisedMatches = false;
 
         private readonly string id;
         private readonly string folderPath_run;
-        private readonly bool paralelisedMatches;
-        private readonly Func<NeuralNetwork> networkFactory;
 
-        public EvolutionaryAlgorithm(string id, Func<NeuralNetwork> networkFactory, RulesType rulesType, bool paralelisedMatches)
+        private int genNum = 0;
+
+        public EvolutionaryAlgorithm(string id, int[] hiddenLayers, RulesType rulesType)
         {
             this.id = id;
-            this.networkFactory = networkFactory;
             this.rulesType = rulesType;
-            this.paralelisedMatches = paralelisedMatches;
+
+            var (noColumn, noRows) = GameRules.GetBoardDimensions(rulesType);
+            neuronLayout = new int[(hiddenLayers?.Length ?? 0) + 2];
+            neuronLayout[0] = noColumn * noRows / 2;
+            neuronLayout[neuronLayout.Length - 1] = 1;
+            hiddenLayers?.CopyTo(neuronLayout, 1);
+
 
             folderPath_run = $"{folderPath_eva}/run_{id}";
+            if (!Directory.Exists(folderPath_eva))
+            {
+                throw new ArgumentException($"Root folder for Evolutionary Algorithms output not set");
+            }
             if (Directory.Exists(folderPath_run))
             {
                 throw new ArgumentException($"ID {id} already used.");
@@ -59,6 +71,7 @@ namespace Draughts
             {
                 sw.WriteLine($"id = {id}");
                 sw.WriteLine($"rulesType = {Enum.GetName(typeof(RulesType), rulesType)}");
+                sw.WriteLine($"neuronLayout = [{string.Join(",", neuronLayout)}]"); 
                 sw.WriteLine($"mutationRate = {mutationRate}"); 
                 sw.WriteLine($"mutationBitRate = {mutationBitRate}");
                 sw.WriteLine($"crossoverRate = {crossoverRate}");
@@ -70,21 +83,21 @@ namespace Draughts
         }
 
 
-        public List<NNFit> Run(int numberOfGenerations)
+        public List<NNFit> Run()
         {
             var startingPopulation = new List<NeuralNetwork>(populationSize + numberOfElites);
             for (int i = 0; i < populationSize; i++)
             {
-                startingPopulation.Add(networkFactory());
+                startingPopulation.Add(GetRandomNetwork());
             }
             var generation = CalculateFitnesses(startingPopulation);
             Sort(generation);
-            Report(generation, 0);
+            Report(generation);
 
-            for (int i = 1; i < numberOfGenerations; i++)
+            for (genNum = 1; genNum < numberOfGenerations; genNum++)
             {
                 generation = GetNextGen(generation);
-                Report(generation, i);
+                Report(generation);
             }
 
             return generation;
@@ -121,6 +134,24 @@ namespace Draughts
             return nextGen;
         }
 
+        private NeuralNetwork GetRandomNetwork()
+        {
+            var nn = new NeuralNetwork(neuronLayout, rulesType, i => i);
+
+            for (int i = 0; i < nn.weights.Length; i++)
+            {
+                for (int j = 0; j < nn.weights[i].GetLength(0); j++)
+                {
+                    for (int k = 0; k < nn.weights[i].GetLength(1); k++)
+                    {
+                        nn.weights[i][j, k] = Utils.rand.NextGaussian(1d, 1d);
+                    }
+                }
+            }
+
+            return nn;
+        }
+
         private List<NeuralNetwork> SelectRulete(List<NNFit> population)
         {
             var wheelSums = new double[population.Count];
@@ -144,9 +175,8 @@ namespace Draughts
 
         public (NeuralNetwork, NeuralNetwork) CrossOver(NeuralNetwork a0, NeuralNetwork b0)
         {
-            var neuronLayout = a0.neuronLayout;
-            var a1 = new NeuralNetwork(neuronLayout, a0.activationFunction);
-            var b1 = new NeuralNetwork(neuronLayout, b0.activationFunction);
+            var a1 = new NeuralNetwork(neuronLayout, rulesType, a0.activationFunction);
+            var b1 = new NeuralNetwork(neuronLayout, rulesType, b0.activationFunction);
 
             for (int i = 0; i < neuronLayout.Length - 1; i++)
             {
@@ -201,13 +231,15 @@ namespace Draughts
         {
             var nf = new NNFit[networks.Count];
 
+            int depth = (int)(genNum * 3d / numberOfGenerations + 1);
+
             void sim(int i)
             {
                 var gameStats = MainWindow.Simulate(
-                    $"{id}_sim{i}",
+                    $"{id}_gen{genNum}_sim{i}",
                     rulesType,
-                    () => new MinimaxBot($"nn_bot{minimaxDepth}", minimaxDepth, new BoardEvaluatorNeuralNetwork(_ => networks[i]), null, true, true),
-                    () => new MinimaxBot($"mx_bot{minimaxDepth}", minimaxDepth, new BoardEvaluatorBasic(), null, true, true),
+                    () => new MinimaxBot($"network", depth, new BoardEvaluatorNeuralNetwork(networks[i]), null),
+                    () => new MinimaxBot($"basic", depth, new BoardEvaluatorBasic(), null),
                     numberOfCompetetiveMatches,
                     null
                 );
@@ -227,12 +259,10 @@ namespace Draughts
                 }
             }
 
-            
-
             return nf.ToList();
         }
 
-        private void Report(List<NNFit> generation, int genNum)
+        private void Report(List<NNFit> generation)
         {
             Debug.WriteLine($"[{id}] gen{genNum} | best: {generation.First().fitness}/{numberOfCompetetiveMatches}");
 
@@ -253,7 +283,7 @@ namespace Draughts
             {
                 var nn = generation[i].neuralNetwork;
 
-                using (var fs = new FileStream($"{folderPath_run}/gen{genNum}_net{i}.nn", FileMode.Create, FileAccess.Write))
+                using (var fs = new FileStream($"{folderPath_run}/gen{genNum}_net{i}.{Utils.neuralNetworkFileExt}", FileMode.Create, FileAccess.Write))
                 {
                     Utils.binaryFormatter.Serialize(fs, nn);
                 }

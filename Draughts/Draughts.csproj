@@ -42,6 +42,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -62,6 +63,7 @@
     </ApplicationDefinition>
     <Compile Include="BoardEvaluators\BoardEvaluatorBasic.cs" />
     <Compile Include="BoardEvaluators\BoardEvaluatorNeuralNetwork.cs" />
+    <Compile Include="BoardEvaluators\BoardEvaluatorType.cs" />
     <Compile Include="BoardEvaluators\NeuralNetwork.cs" />
     <Compile Include="BoardState.cs" />
     <Compile Include="EvolutionaryAlgorithm.cs" />

@@ -1,4 +1,5 @@
-﻿using Draughts.Game;
+﻿using Draughts.BoardEvaluators;
+using Draughts.Game;
 using Draughts.Pieces;
 using Draughts.Players;
 using Draughts.Rules;
@@ -46,19 +47,34 @@ namespace Draughts.GUI
             switch (windowType)
             {
                 case GameType.Local:
-                    Title = "2 users";
+                    Title = "Local";
+
+                    Height = 200;
+                    Grid.SetRow(button_ok, 4);
                     break;
 
                 case GameType.AgainstBot:
                     Title = "Against bot";
 
                     label_difficulty.Visibility = Visibility.Visible;
+                    combobox_difficulty.Visibility = Visibility.Visible;
                     combobox_difficulty.ItemsSource = Enum.GetValues(typeof(BotDifficulty)).Cast<BotDifficulty>();
                     combobox_difficulty.SelectedIndex = 0;
-                    combobox_difficulty.Visibility = Visibility.Visible;
+                    
+                    label_evaluator.Visibility = Visibility.Visible;
+                    combobox_evaluator.Visibility = Visibility.Visible;
+                    combobox_evaluator.ItemsSource = Enum.GetValues(typeof(BoardEvaluatorType)).Cast<BoardEvaluatorType>();
+                    combobox_evaluator.SelectedIndex = 0;
+
+                    label_networkFilePath.Visibility = Visibility.Visible;
+                    textbox_networkFilePath.Visibility = Visibility.Visible;
+                    button_selectNetworkFilePath.Visibility = Visibility.Visible;
 
                     label_userColor.Visibility = Visibility.Visible;
                     combobox_userColor.Visibility = Visibility.Visible;
+
+                    Height = 285;
+                    Grid.SetRow(button_ok, 8);
                     break;
 
                 case GameType.OverNetwork:
@@ -75,6 +91,7 @@ namespace Draughts.GUI
                     label_serverIP.Visibility = Visibility.Visible;
                     textbox_serverIP.Visibility = Visibility.Visible;
 
+                    Height = 260;
                     Grid.SetRow(button_ok, 7);
                     break;
 
@@ -84,14 +101,17 @@ namespace Draughts.GUI
                     label_rules.Visibility = Visibility.Hidden;
                     combobox_rules.Visibility = Visibility.Hidden;
 
-                    label_filePath.Visibility = Visibility.Visible;
-                    textbox_filePath.Visibility = Visibility.Visible;
-                    button_selectFilePath.Visibility = Visibility.Visible;
+                    label_replayFilePath.Visibility = Visibility.Visible;
+                    textbox_replayFilePath.Visibility = Visibility.Visible;
+                    button_selectReplayFilePath.Visibility = Visibility.Visible;
 
                     label_animationSpeed.Visibility = Visibility.Visible;
                     combobox_animationSpeed.Visibility = Visibility.Visible;
                     combobox_animationSpeed.ItemsSource = Enum.GetValues(typeof(AnimationSpeed)).Cast<AnimationSpeed>();
                     combobox_animationSpeed.SelectedIndex = 0;
+
+                    Height = 230;
+                    Grid.SetRow(button_ok, 5);
                     break;
 
                 default:
@@ -110,17 +130,14 @@ namespace Draughts.GUI
 
         public RulesType rules { get; private set; }
         public BotDifficulty botDifficulty { get; private set; }
+        public BoardEvaluatorType boardEvaluator { get; private set; }
         public PieceColor color { get; private set; }
         public NetworkType networkType { get; private set; }
         public string serverIPaddress { get; private set; }
-        public string filePath { get; private set; }
+        public string replayFilePath { get; private set; }
+        public string neuralNetworkFilePath { get; private set; }
         public AnimationSpeed animationSpeed { get; private set; }
 
-
-        private bool ValidateFilePath(string filePath)
-        {
-            return File.Exists(filePath) && filePath.EndsWith($".{Utils.replayFileExt}");
-        }
 
         private void Button_ok_Click(object sender, RoutedEventArgs e)
         {
@@ -134,6 +151,16 @@ namespace Draughts.GUI
                 case GameType.AgainstBot:
                     color = combobox_userColor.SelectedIndex == 0 ? PieceColor.White : PieceColor.Black;
                     botDifficulty = (BotDifficulty)combobox_difficulty.SelectedItem;
+                    boardEvaluator = (BoardEvaluatorType)combobox_evaluator.SelectedItem;
+                    if (boardEvaluator == BoardEvaluatorType.NeuralNetwork)
+                    {
+                        if (!File.Exists(textbox_networkFilePath.Text))
+                        {
+                            MessageBox.Show("Invalid file path");
+                            return;
+                        }
+                        neuralNetworkFilePath = textbox_networkFilePath.Text;
+                    }
                     break;
 
                 case GameType.OverNetwork:
@@ -148,8 +175,8 @@ namespace Draughts.GUI
                     break;
 
                 case GameType.Replay:
-                    filePath = textbox_filePath.Text;
-                    if (!ValidateFilePath(textbox_filePath.Text))
+                    replayFilePath = textbox_replayFilePath.Text;
+                    if (!File.Exists(textbox_replayFilePath.Text))
                     {
                         MessageBox.Show("Invalid file path");
                         return;
@@ -182,15 +209,15 @@ namespace Draughts.GUI
 
         private void Textbox_filePath_TextChanged(object sender, TextChangedEventArgs e)
         {
-            var brush = ValidateFilePath(textbox_filePath.Text)
+            var brush = File.Exists(textbox_replayFilePath.Text)
                 ? Brushes.Green
                 : Brushes.Red;
 
-            textbox_filePath.BorderBrush = brush;
-            textbox_filePath.Foreground = brush;
+            textbox_replayFilePath.BorderBrush = brush;
+            textbox_replayFilePath.Foreground = brush;
         }
 
-        private void Button_selectFilePath_Click(object sender, RoutedEventArgs e)
+        private void Button_selectReplayFilePath_Click(object sender, RoutedEventArgs e)
         {
             var f = new OpenFileDialog() {
                 Multiselect = false,
@@ -201,8 +228,31 @@ namespace Draughts.GUI
 
             if (f.ShowDialog() ?? false)
             {
-                textbox_filePath.Text = f.FileName;
+                textbox_replayFilePath.Text = f.FileName;
             }
+        }
+        private void Button_selectNetworkFilePath_Click(object sender, RoutedEventArgs e)
+        {
+            var f = new OpenFileDialog() {
+                Multiselect = false,
+                CheckFileExists = true,
+                DefaultExt = $".{Utils.neuralNetworkFileExt}",
+                Filter = $"*.{Utils.neuralNetworkFileExt} files|*.{Utils.neuralNetworkFileExt}",
+            };
+
+            if (f.ShowDialog() ?? false)
+            {
+                textbox_networkFilePath.Text = f.FileName;
+            }
+        }
+
+        private void Combobox_evaluator_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            bool enabled = ((BoardEvaluatorType)combobox_evaluator.SelectedItem) == BoardEvaluatorType.NeuralNetwork;
+
+            label_networkFilePath.IsEnabled = enabled;
+            textbox_networkFilePath.IsEnabled = enabled;
+            button_selectNetworkFilePath.IsEnabled = enabled;
         }
     }
 }

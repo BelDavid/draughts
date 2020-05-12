@@ -5,10 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:Draughts.GUI"
+		  xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
-        Title="SelectorWindow" Height="250" Width="250" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+        Title="New Game" Height="250" Width="250" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
 	<Window.Resources>
-		<GridLength x:Key="rowSize">25</GridLength>
 		<Thickness x:Key="comboboxMargin">2</Thickness>
 	</Window.Resources>
 
@@ -16,51 +16,62 @@
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="15*"/>
 			<ColumnDefinition Width="20*"/>
+			<ColumnDefinition Width="5*"/>
 			<ColumnDefinition Width="10*"/>
 		</Grid.ColumnDefinitions>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="30"/>
-			<RowDefinition Height="{StaticResource rowSize}"/>
-			<RowDefinition Height="{StaticResource rowSize}"/>
-			<RowDefinition Height="{StaticResource rowSize}"/>
-			<RowDefinition Height="{StaticResource rowSize}"/>
-			<RowDefinition Height="{StaticResource rowSize}"/>
-			<RowDefinition Height="{StaticResource rowSize}"/>
-			<RowDefinition Height="{StaticResource rowSize}"/>
+			<RowDefinition Height="25"/>
+			<RowDefinition Height="25"/>
+			<RowDefinition Height="25"/>
+			<RowDefinition Height="25"/>
+			<RowDefinition Height="25"/>
+			<RowDefinition Height="25"/>
+			<RowDefinition Height="25"/>
+			<RowDefinition Height="25"/>
 			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
 
 		<!-- Base -->
-		<Label Name="label_upperTitle" Content="Select parameters" Grid.ColumnSpan="3" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" FontSize="16" />
+		<Label Name="label_upperTitle" Content="Select parameters" Grid.ColumnSpan="4" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" FontSize="16" />
 		<Label Name="label_rules" Grid.Row="2" Content="Rules:" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-		<ComboBox Name="combobox_rules" Grid.Row="2" Grid.Column="1" Margin="{StaticResource comboboxMargin}"/>
+		<ComboBox Name="combobox_rules" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}"/>
 
 		<!-- User color -->
 		<Label  Name="label_userColor" Grid.Row="3" Content="Color:" HorizontalContentAlignment="Right" Visibility="Hidden"/>
-		<ComboBox Name="combobox_userColor" Grid.Row="3" Grid.Column="1" Margin="{StaticResource comboboxMargin}" Visibility="Hidden"/>
+		<ComboBox Name="combobox_userColor" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" Visibility="Hidden"/>
 
 		<!-- Bot difficulty -->
 		<Label Name="label_difficulty" Grid.Row="4" Content="Difficulty:" HorizontalContentAlignment="Right" Visibility="Hidden"/>
-		<ComboBox Name="combobox_difficulty" Grid.Row="4" Grid.Column="1" Margin="{StaticResource comboboxMargin}" Visibility="Hidden"/>
+		<ComboBox Name="combobox_difficulty" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" Visibility="Hidden"/>
+
+		<!-- Board evaluator -->
+		<Label Name="label_evaluator" Grid.Row="5" Content="Evaluator:" HorizontalContentAlignment="Right" Visibility="Hidden"/>
+		<ComboBox Name="combobox_evaluator" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" SelectionChanged="Combobox_evaluator_SelectionChanged" Visibility="Hidden"/>
+
+		<!-- Network file path -->
+		<Label Name="label_networkFilePath" Grid.Row="6" Content="File Path:" HorizontalAlignment="Right" Visibility="Hidden"/>
+		<TextBox x:Name="textbox_networkFilePath" Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" TextChanged="Textbox_filePath_TextChanged" Visibility="Hidden"/>
+		<Button x:Name="button_selectNetworkFilePath" Grid.Row="6" Grid.Column="3" Content="Select" Margin="{StaticResource comboboxMargin}" Click="Button_selectNetworkFilePath_Click" Visibility="Hidden"/>
 
 		<!-- Network type -->
 		<Label Name="label_networkType" Grid.Row="4" Content="Type:" HorizontalContentAlignment="Right" Visibility="Hidden"/>
-		<ComboBox Name="combobox_networkType" Grid.Row="4" Grid.Column="1" Margin="{StaticResource comboboxMargin}" Visibility="Hidden" SelectionChanged="Combobox_networkType_SelectionChanged"/>
+		<ComboBox Name="combobox_networkType" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" Visibility="Hidden" SelectionChanged="Combobox_networkType_SelectionChanged"/>
 
 		<!-- Server IP -->
 		<Label Name="label_serverIP" Grid.Row="5" Content="Server IP:" HorizontalContentAlignment="Right" Visibility="Hidden"/>
-		<TextBox Name="textbox_serverIP" Grid.Row="5" TextChanged="Textbox_serverIP_TextChanged" Grid.Column="1" Text="127.0.0.1" Margin="{StaticResource comboboxMargin}" TextAlignment="Center" Visibility="Hidden"/>
+		<TextBox Name="textbox_serverIP" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" TextChanged="Textbox_serverIP_TextChanged" Text="127.0.0.1" Margin="{StaticResource comboboxMargin}" TextAlignment="Center" Visibility="Hidden"/>
 
-		<!-- File path -->
-		<Label Name="label_filePath" Grid.Row="2" Content="File Path:" HorizontalAlignment="Right" Visibility="Hidden"/>
-		<TextBox x:Name="textbox_filePath" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" TextChanged="Textbox_filePath_TextChanged" Visibility="Hidden"/>
-		<Button x:Name="button_selectFilePath" Grid.Row="3" Grid.Column="1" Content="Select File" Width="80" Margin="{StaticResource comboboxMargin}" Click="Button_selectFilePath_Click" Visibility="Hidden"/>
+		<!-- Replay file path -->
+		<Label Name="label_replayFilePath" Grid.Row="2" Content="File Path:" HorizontalAlignment="Right" Visibility="Hidden"/>
+		<TextBox x:Name="textbox_replayFilePath" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" TextChanged="Textbox_filePath_TextChanged" Visibility="Hidden"/>
+		<Button x:Name="button_selectReplayFilePath" Grid.Row="2" Grid.Column="3" Content="Select" Margin="{StaticResource comboboxMargin}" Click="Button_selectReplayFilePath_Click" Visibility="Hidden"/>
 
 		<!-- Animation speed -->
-		<Label Name="label_animationSpeed" Grid.Row="4" Content="Animation:" HorizontalContentAlignment="Right" Visibility="Hidden"/>
-		<ComboBox x:Name="combobox_animationSpeed" Grid.Column="1" Grid.Row="4" Margin="{StaticResource comboboxMargin}" Visibility="Hidden"/>
+		<Label Name="label_animationSpeed" Grid.Row="3" Content="Animation:" HorizontalContentAlignment="Right" Visibility="Hidden"/>
+		<ComboBox x:Name="combobox_animationSpeed" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" Visibility="Hidden"/>
 
 		<!-- OK -->
-		<Button Name="button_ok" Content="OK" Grid.Column="1" Grid.Row="6" Click="Button_ok_Click" FontWeight="Bold" />
+		<Button Name="button_ok" Content="OK" Grid.Column="1" Grid.Row="7" Click="Button_ok_Click" FontWeight="Bold" />
 	</Grid>
 </Window>
