@@ -139,6 +139,10 @@ namespace Draughts.GUI
         public AnimationSpeed animationSpeed { get; private set; }
 
 
+        private bool IsEvaluatorNeeded => combobox_difficulty.SelectedItem != null ? (BotDifficulty)(combobox_difficulty.SelectedItem) != BotDifficulty.Randomized : false;
+        private bool IsNetworkSelectionNeeded => combobox_evaluator.SelectedItem != null ? ((BoardEvaluatorType)combobox_evaluator.SelectedItem) == BoardEvaluatorType.NeuralNetwork : false;
+
+
         private void Button_ok_Click(object sender, RoutedEventArgs e)
         {
             rules = (RulesType)combobox_rules.SelectedItem;
@@ -248,11 +252,24 @@ namespace Draughts.GUI
 
         private void Combobox_evaluator_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            bool enabled = ((BoardEvaluatorType)combobox_evaluator.SelectedItem) == BoardEvaluatorType.NeuralNetwork;
+            bool isNetworkSelectionNeeded = IsNetworkSelectionNeeded;
 
-            label_networkFilePath.IsEnabled = enabled;
-            textbox_networkFilePath.IsEnabled = enabled;
-            button_selectNetworkFilePath.IsEnabled = enabled;
+            label_networkFilePath.IsEnabled = isNetworkSelectionNeeded;
+            textbox_networkFilePath.IsEnabled = isNetworkSelectionNeeded;
+            button_selectNetworkFilePath.IsEnabled = isNetworkSelectionNeeded;
+        }
+
+        private void Combobox_difficulty_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            bool isEvaluatorNeeded = IsEvaluatorNeeded;
+            bool isNetworkSelectionNeeded = IsNetworkSelectionNeeded;
+
+            label_evaluator.IsEnabled = isEvaluatorNeeded;
+            combobox_evaluator.IsEnabled = isEvaluatorNeeded;
+
+            label_networkFilePath.IsEnabled = isEvaluatorNeeded && isNetworkSelectionNeeded;
+            textbox_networkFilePath.IsEnabled = isEvaluatorNeeded && isNetworkSelectionNeeded;
+            button_selectNetworkFilePath.IsEnabled = isEvaluatorNeeded && isNetworkSelectionNeeded;
         }
     }
 }

@@ -1,0 +1,11 @@
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\obj\Release\Controller.csprojAssemblyReference.cache
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\obj\Release\Controller.csproj.CoreCompileInputs.cache
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\bin\Release\Controller.exe.config
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\bin\Release\Controller.exe
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\bin\Release\Controller.pdb
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\bin\Release\Draughts.exe
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\bin\Release\Draughts.pdb
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\bin\Release\Draughts.exe.config
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\obj\Release\Controller.csproj.CopyComplete
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\obj\Release\Controller.exe
+C:\Users\belic\OneDrive\MyApps\Draughts\Controller\obj\Release\Controller.pdb

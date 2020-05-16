@@ -43,11 +43,11 @@
 
 		<!-- Bot difficulty -->
 		<Label Name="label_difficulty" Grid.Row="4" Content="Difficulty:" HorizontalContentAlignment="Right" Visibility="Hidden"/>
-		<ComboBox Name="combobox_difficulty" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" Visibility="Hidden"/>
+		<ComboBox Name="combobox_difficulty" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" Visibility="Hidden" SelectionChanged="Combobox_difficulty_SelectionChanged"/>
 
 		<!-- Board evaluator -->
 		<Label Name="label_evaluator" Grid.Row="5" Content="Evaluator:" HorizontalContentAlignment="Right" Visibility="Hidden"/>
-		<ComboBox Name="combobox_evaluator" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" SelectionChanged="Combobox_evaluator_SelectionChanged" Visibility="Hidden"/>
+		<ComboBox Name="combobox_evaluator" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Margin="{StaticResource comboboxMargin}" SelectionChanged="Combobox_evaluator_SelectionChanged" Visibility="Hidden" IsEnabled="False"/>
 
 		<!-- Network file path -->
 		<Label Name="label_networkFilePath" Grid.Row="6" Content="File Path:" HorizontalAlignment="Right" Visibility="Hidden"/>

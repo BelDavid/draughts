@@ -1,9 +1,11 @@
 ﻿using Draughts.Game;
 using Draughts.Pieces;
 using Draughts.Players;
+using Draughts.Properties;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -14,6 +16,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using static Draughts.Utils;
@@ -45,7 +48,7 @@ namespace Draughts.GUI
         public const double 
             boardMarginRatio = 0.05d,
             pieceMarginRatio = 0.08d,
-            crownMarginRatio = 0.30d,
+            crownMarginRatio = 0.2d,
             avaiablePositionMarginRatio = 0.33d;
 
         // Animation
@@ -677,12 +680,23 @@ namespace Draughts.GUI
 
         private void Promote(PieceShape ps)
         {
-            ps.crown = new Ellipse()
+            ps.image_crown = new Image();
+            using (var memory = new MemoryStream())
             {
-                StrokeThickness = 0,
-                Fill = Brushes.Blue,
-            };
-            canvas.Children.Add(ps.crown);
+                var bitmap = GetColor(ps.pieceType) == PieceColor.White ? Resources.crown_black : GetColor(ps.pieceType) == PieceColor.Black ? Resources.crown_white : throw new Exception("Invalid color");
+                bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+                memory.Position = 0;
+
+                var bitmapimage = new BitmapImage();
+                bitmapimage.BeginInit();
+                bitmapimage.StreamSource = memory;
+                bitmapimage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapimage.EndInit();
+
+                ps.image_crown.Source = bitmapimage;
+            }
+
+            canvas.Children.Add(ps.image_crown);
             ps.pieceType = PromoteToKing(ps.pieceType);
         }
 
@@ -901,16 +915,16 @@ namespace Draughts.GUI
             Canvas.SetTop(pieceShape.ellipse_base, y + pieceMarginRatio * height);
 
             // crown   TODO
-            if (pieceShape.crown != null)
+            if (pieceShape.image_crown != null)
             {
                 double crownWidth = width * (1 - 2 * crownMarginRatio);
                 double crownHeight = height * (1 - 2 * crownMarginRatio);
 
-                pieceShape.crown.Width = crownWidth;
-                pieceShape.crown.Height = crownHeight;
+                pieceShape.image_crown.Width = crownWidth;
+                pieceShape.image_crown.Height = crownHeight;
 
-                Canvas.SetLeft(pieceShape.crown, x + crownMarginRatio * width);
-                Canvas.SetTop(pieceShape.crown, y + crownMarginRatio * height);
+                Canvas.SetLeft(pieceShape.image_crown, x + crownMarginRatio * width);
+                Canvas.SetTop(pieceShape.image_crown, y + crownMarginRatio * height);
             }
         }
 

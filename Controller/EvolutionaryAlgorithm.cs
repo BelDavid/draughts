@@ -1,4 +1,5 @@
-﻿using Draughts.BoardEvaluators;
+﻿using Draughts;
+using Draughts.BoardEvaluators;
 using Draughts.Players;
 using Draughts.Rules;
 using Microsoft.Win32;
@@ -9,9 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Media;
 
-namespace Draughts
+namespace Controller
 {
     public class EvolutionaryAlgorithm
     {
@@ -28,15 +28,15 @@ namespace Draughts
         public readonly RulesType rulesType;
         public readonly int[] neuronLayout;
         public double mutationRate = 1d;
-        public double mutationBitRate = 0.01d;
+        public double mutationBitRate = 0.1d;
         public double crossoverRate = 0.2d;
         public int populationSize = 30;
-        public int numberOfElites = 3;
+        public int numberOfElites = 5;
         public int numberOfGenerations = 10;
         public int numberOfGameRounds = 50;
         public int numberOfCompetetiveMatches = 50;
 
-        public int minimaxDepth = 2;
+        public int minimaxDepth = 3;
         public bool paralelisedMatches = false;
 
         private readonly string id;
@@ -134,9 +134,9 @@ namespace Draughts
             return nextGen;
         }
 
-        private NeuralNetwork GetRandomNetwork()
+        public NeuralNetwork GetRandomNetwork()
         {
-            var nn = new NeuralNetwork(neuronLayout, rulesType, i => i);
+            var nn = new NeuralNetwork(neuronLayout, rulesType, i => 1.0f / (1.0f + (float)Math.Exp(-i)));
 
             for (int i = 0; i < nn.weights.Length; i++)
             {
@@ -231,20 +231,27 @@ namespace Draughts
         {
             var nf = new NNFit[networks.Count];
 
-            int depth = (int)(genNum * 3d / numberOfGenerations + 1);
+            int depth = minimaxDepth; // (int)((double)genNum * minimaxDepth / numberOfGenerations + 1);
+            int done = 0;
+            var outputLock = new object();
 
             void sim(int i)
             {
-                var gameStats = MainWindow.Simulate(
+                var gameStats = Program.Simulate(
                     $"{id}_gen{genNum}_sim{i}",
                     rulesType,
                     () => new MinimaxBot($"network", depth, new BoardEvaluatorNeuralNetwork(networks[i]), null),
                     () => new MinimaxBot($"basic", depth, new BoardEvaluatorBasic(), null),
-                    numberOfCompetetiveMatches,
-                    null
+                    numberOfCompetetiveMatches
                 );
 
                 nf[i] = new NNFit(networks[i], gameStats);
+                lock (outputLock)
+                {
+                    done += 1;
+                    Console.CursorLeft = 0;
+                    Console.Write($"{done}/{networks.Count}".PadRight(20));
+                }
             }
 
             if (paralelisedMatches)
@@ -259,30 +266,33 @@ namespace Draughts
                 }
             }
 
+            Console.CursorLeft = 0;
+            Console.Write(new string(' ', 20));
+            Console.CursorLeft = 0;
+
             return nf.ToList();
         }
 
         private void Report(List<NNFit> generation)
         {
-            Debug.WriteLine($"[{id}] gen{genNum} | best: {generation.First().fitness}/{numberOfCompetetiveMatches}");
+            Console.WriteLine($"[{id}] gen{genNum} | best: {generation.First().fitness}/{numberOfCompetetiveMatches}");
 
             using (var sw = new StreamWriter($"{folderPath_run}/log.txt", true))
             {
-                sw.WriteLine($"GenNumber = {genNum}");
+                sw.WriteLine($"Generation: {genNum}");
 
                 for (int i = 0; i < generation.Count; i++)
                 {
-                    var (wins, ties, loses) = generation[i].gameStats;
-                    sw.WriteLine($"network{i} - w:{wins}|t:{ties}|l:{loses}");
+                    var stats = generation[i].gameStats;
+                    sw.WriteLine($"net{i} - wins: (w:{stats.player0WinsWhite} b:{stats.player0WinsBlack}) | ties: {stats.ties} | loses: (w:{stats.player0LosesWhite} b:{stats.player0LosesBlack})");
                 }
 
-                sw.WriteLine("------------------------------------");
+                sw.WriteLine("----------------------------------------------------------------");
             }
 
             for (int i = 0; i < generation.Count; i++)
             {
                 var nn = generation[i].neuralNetwork;
-
                 using (var fs = new FileStream($"{folderPath_run}/gen{genNum}_net{i}.{Utils.neuralNetworkFileExt}", FileMode.Create, FileAccess.Write))
                 {
                     Utils.binaryFormatter.Serialize(fs, nn);
@@ -291,17 +301,18 @@ namespace Draughts
         }
     }
 
+    [Serializable]
     public class NNFit
     {
         public NeuralNetwork neuralNetwork;
-        public (int wins, int ties, int loses) gameStats;
+        public SimulationOutput gameStats;
         public double fitness;
 
-        public NNFit(NeuralNetwork neuralNetwork, (int wins, int ties, int loses) gameStats)
+        public NNFit(NeuralNetwork neuralNetwork, SimulationOutput gameStats)
         {
             this.neuralNetwork = neuralNetwork;
             this.gameStats = gameStats;
-            this.fitness = gameStats.wins;
+            this.fitness = gameStats.player0WinsWhite + gameStats.player0WinsBlack;
         }
     }
 }

@@ -1,6 +1,4 @@
-﻿//#define SIMULATION
-//#define EVA
-
+﻿
 using Draughts.Game;
 using Draughts.Pieces;
 using Draughts.Players;
@@ -40,83 +38,26 @@ namespace Draughts
         private Visualiser visualiser;
         private GameControl gameControl;
 
-        private Thread[] threads;
-
         public string defaultTitle = "Draughts";
 
+        public ProgressBar ProgressBar_Bot => progressbar_bot;
 
         public MainWindow()
         {
             InitializeComponent();
 
             Title = defaultTitle;
-
-#if SIMULATION
-            var net0 = "test2/gen9_net0";
-            var net1 = "test2/gen0_net0";
-            var nn0 = LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{net0}.nn");
-            var nn1 = LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{net1}.nn");
-            int numberOfGames = 1000;
-            int depth = 1;
-
-            void run(string simulationID)
-            {
-                string bot0Id = null;
-                string bot1Id = null;
-
-                var (networkWins, ties, basicWins) = Simulate(
-                    simulationID,
-                    RulesType.Czech,
-                    () => new MinimaxBot(bot0Id = net0, depth, new BoardEvaluatorNeuralNetwork(nn0), null),
-                    () => new MinimaxBot(bot1Id = net1, depth, new BoardEvaluatorNeuralNetwork(nn1), null),
-                    //() => new MinimaxBot(bot1Id = "basic", depth, new BoardEvaluatorBasic(), null),
-                    numberOfGames,
-                    null
-                );
-                Debug.WriteLine($"[{simulationID}] {bot0Id}: {networkWins} | ties: {ties} | {bot1Id}: {basicWins}");
-            }
-
-            threads = new Thread[]
-            {
-                new Thread(() => run("sim0")),
-                new Thread(() => run("sim1")),
-                new Thread(() => run("sim2")),
-                new Thread(() => run("sim3")),
-            };
-            menu.IsEnabled = false;
-#endif
-
-#if EVA
-            threads = new Thread[]
-            {
-                new Thread(TrainNNWithEvAlg),
-            };
-            menu.IsEnabled = false;
-#endif
         }
 
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (threads != null)
-            {
-                foreach (var thread in threads)
-                {
-                    thread?.Start();
-                }
-            }
+            gameControl?.Start();
         }
 
         private void MainWindow_Closed(object sender, EventArgs e)
         {
             TerminateGame(true);
-            if (threads != null)
-            {
-                foreach (var thread in threads)
-                {
-                    thread?.Abort();
-                }
-            }
         }
 
         private void Menu_exit_Click(object sender, RoutedEventArgs e)
@@ -125,131 +66,7 @@ namespace Draughts
         }
 
 
-        public static (int bot0Wins, int ties, int bot1Wins) Simulate(string simulationID, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns, MainWindow mainWindow)
-        {
-            if (mainWindow != null)
-            {
-                mainWindow.TerminateGame(false);
-            }
-
-            int bot0Wins = 0;
-            int tieCount = 0;
-            int bot1Wins = 0;
-
-            string bot0Id = null;
-            string bot1Id = null;
-
-            for (int i = 0; i < numberOfRuns; i++)
-            {
-                var bot0 = bot0Factory();
-                var bot1 = bot1Factory();
-
-                if (bot0Id is null) { bot0Id = bot0.id; }
-                if (bot1Id is null) { bot1Id = bot1.id; }
-
-                var firstPlayer = i % 2 == 0 ? bot0 : bot1;
-                var secondPlayer = i % 2 == 0 ? bot1 : bot0;
-
-                var gameControl = new GameControl($"{simulationID}", rules, firstPlayer, secondPlayer);
-                Visualiser visualiser = null;
-
-                if (mainWindow != null)
-                {
-                    var startingColor = gameControl.gameRules.GetStartingColor();
-
-                    mainWindow.Dispatcher.Invoke(() =>
-                    {
-                        mainWindow.Title = $"{mainWindow.defaultTitle} | Simulation [{simulationID}]: {i+1}/{numberOfRuns} | {startingColor}: {firstPlayer.id} | {Utils.SwapColor(startingColor)}: {secondPlayer.id}";
-                        visualiser = gameControl.GetVisualiser(mainWindow);
-                        visualiser.animationSpeed = 10;
-                    });
-                }
-
-                var finishReason = gameControl.Run();
-
-                if (visualiser != null)
-                {
-                    Thread.Sleep(2000);
-                }
-
-                visualiser?.Dispose();
-
-                if (finishReason == FinishReason.OnePlayerWon)
-                {
-                    if (gameControl.Winner == bot0)
-                    {
-                        bot0Wins += 1;
-                    }
-                    else if (gameControl.Winner == bot1)
-                    {
-                        bot1Wins += 1;
-                    }
-                }
-                else if (finishReason == FinishReason.MoveLimitReached)
-                {
-                    tieCount += 1;
-                }
-            }
-
-            if (mainWindow != null)
-            {
-                mainWindow.Dispatcher.Invoke(() => { mainWindow.Title = mainWindow.defaultTitle; });
-            }
-
-            return (bot0Wins, tieCount, bot1Wins);
-        }
-
-        private void TrainNNWithEvAlg()
-        {
-            var id = "test3";
-
-            TerminateGame(false);
-            var eva = new EvolutionaryAlgorithm(id, new int[] { 10, 10, 10, 10, }, RulesType.Czech)
-            {
-                paralelisedMatches = true,
-                minimaxDepth = 2,
-            };
-            var gen = eva.Run();
-
-            var nn = gen.First().neuralNetwork;
-            var depth = 1;
-            var (network_wins, ties, basicEval_Wins) = Simulate(
-                id,
-                RulesType.Czech,
-                () => new MinimaxBot($"network", depth, new BoardEvaluatorNeuralNetwork(nn), null),
-                () => new MinimaxBot($"basic", depth, new BoardEvaluatorBasic(), null),
-                1000,
-                null
-            );
-
-            Debug.WriteLine($"[{id}] network: {network_wins} | ties: {ties} | basic: {basicEval_Wins}");
-
-            gameControl?.Run();
-        }
-
-
-        public NeuralNetwork LoadNetwork(string path)
-        {
-            if (!File.Exists(path))
-            {
-                return null;
-            }
-
-            try
-            {
-                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
-                {
-                    return (NeuralNetwork)Utils.binaryFormatter.Deserialize(fs);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error reading from {path}\n{ex.Message}");
-                return null;
-            }
-        }
-
-        private void TerminateGame(bool force)
+        public void TerminateGame(bool force)
         {
             gameControl?.Terminate(force, !force);
             
@@ -275,7 +92,7 @@ namespace Draughts
             });
         }
 
-        
+
         private void Menu_new_local_Click(object sender, RoutedEventArgs e)
         {
             var selector = new SelectorWindow(GameType.Local, this);
@@ -313,7 +130,7 @@ namespace Draughts
                         break;
 
                     case BoardEvaluatorType.NeuralNetwork:
-                        var nn = LoadNetwork(selector.neuralNetworkFilePath);
+                        var nn = Utils.LoadNetwork(selector.neuralNetworkFilePath);
                         if (nn != null)
                         {
                             evaluator = new BoardEvaluatorNeuralNetwork(nn);

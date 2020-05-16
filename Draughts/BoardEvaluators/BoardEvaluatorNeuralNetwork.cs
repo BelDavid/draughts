@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Draughts.BoardEvaluators
 {
-    class BoardEvaluatorNeuralNetwork : IBoardEvaluator
+    public class BoardEvaluatorNeuralNetwork : IBoardEvaluator
     {
         private NeuralNetwork neuralNetwork;
 

@@ -1,13 +1,16 @@
-﻿using Draughts.Pieces;
+﻿using Draughts.BoardEvaluators;
+using Draughts.Pieces;
 using Draughts.Rules;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Draughts
 {
@@ -40,5 +43,29 @@ namespace Draughts
                     throw new Exception("Unsupported rules");
             }
         }
+
+
+
+        public static NeuralNetwork LoadNetwork(string path)
+        {
+            if (!File.Exists(path) || !path.EndsWith($".{neuralNetworkFileExt}"))
+            {
+                return null;
+            }
+
+            try
+            {
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+                {
+                    return (NeuralNetwork)binaryFormatter.Deserialize(fs);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error reading from {path}\n{ex.Message}");
+                return null;
+            }
+        }
+
     }
 }
