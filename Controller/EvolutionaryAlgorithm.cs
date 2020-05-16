@@ -234,10 +234,11 @@ namespace Controller
             int depth = minimaxDepth; // (int)((double)genNum * minimaxDepth / numberOfGenerations + 1);
             int done = 0;
             var outputLock = new object();
+            Console.Write($"0/{networks.Count}");
 
             void sim(int i)
             {
-                var gameStats = Program.Simulate(
+                var gameStats = Program.SimulateSerial(
                     $"{id}_gen{genNum}_sim{i}",
                     rulesType,
                     () => new MinimaxBot($"network", depth, new BoardEvaluatorNeuralNetwork(networks[i]), null),
