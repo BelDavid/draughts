@@ -41,7 +41,7 @@ namespace Controller
 #if SIM
             var netId0 = $"{id}/gen49_net0";
             var nn0 = Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{netId0}.{Utils.neuralNetworkFileExt}");
-            int numberOfGames = 50;
+            int numberOfGames = 1000;
 
             void run(string simID, int depth)
             {
@@ -64,9 +64,9 @@ namespace Controller
             //run($"sim4", 4);
             //run($"sim5", 5);
 
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 6; i++)
             {
-                run($"sim7.{i}", 7);
+                run($"sim7.{i}", i);
             }
 #endif
 

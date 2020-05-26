@@ -78,6 +78,7 @@ namespace Controller
                 sw.WriteLine($"populationSize = {populationSize}");
                 sw.WriteLine($"numberOfElites = {numberOfElites}");
                 sw.WriteLine($"numberOfGameRounds = {numberOfGameRounds}");
+                sw.WriteLine($"minimaxDepth = {minimaxDepth}");
                 sw.WriteLine($"numberOfCompetetiveMatches = {numberOfCompetetiveMatches}");
             }
         }

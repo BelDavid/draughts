@@ -24,6 +24,7 @@ namespace Draughts.Game
 
         public readonly GameRules gameRules;
         public readonly List<Move> MoveHistory = new List<Move>();
+        public readonly List<BoardState> StateHistory = new List<BoardState>();
         public readonly string id;
         private readonly RulesType rules;
         private readonly AnimationSpeed animationSpeed;
@@ -87,6 +88,7 @@ namespace Draughts.Game
 
 
             CurrentBoardState = gameRules.GetInitialBoardState();
+            StateHistory.Add(CurrentBoardState);
 
             gameThread = new Thread(() => Run());
         }
@@ -179,6 +181,7 @@ namespace Draughts.Game
                 }
                     CurrentBoardState = CurrentBoardState.ApplyMove(move);
                     MoveHistory.Add(move);
+                    StateHistory.Add(CurrentBoardState);
 
                     visualiser?.ApplyMove(move, !(playerOnMove is User));
                 }
