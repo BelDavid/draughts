@@ -1,4 +1,7 @@
 .vs/*
 Draughts/bin
 Draughts/obj
+Controller/bin
+Controller/obj
+packages
 local/*

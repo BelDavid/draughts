@@ -140,7 +140,10 @@ namespace Draughts.GUI
 
 
         private bool IsEvaluatorNeeded => combobox_difficulty.SelectedItem != null ? (BotDifficulty)(combobox_difficulty.SelectedItem) != BotDifficulty.Randomized : false;
-        private bool IsNetworkSelectionNeeded => combobox_evaluator.SelectedItem != null ? ((BoardEvaluatorType)combobox_evaluator.SelectedItem) == BoardEvaluatorType.NeuralNetwork : false;
+        private bool IsFilePathSelectionNeeded => combobox_evaluator.SelectedItem != null
+            ? ((BoardEvaluatorType)combobox_evaluator.SelectedItem) == BoardEvaluatorType.NeuralNetwork
+               || ((BoardEvaluatorType)combobox_evaluator.SelectedItem) == BoardEvaluatorType.RLModel
+            : false;
 
 
         private void Button_ok_Click(object sender, RoutedEventArgs e)
@@ -156,7 +159,7 @@ namespace Draughts.GUI
                     color = combobox_userColor.SelectedIndex == 0 ? PieceColor.White : PieceColor.Black;
                     botDifficulty = (BotDifficulty)combobox_difficulty.SelectedItem;
                     boardEvaluator = (BoardEvaluatorType)combobox_evaluator.SelectedItem;
-                    if (boardEvaluator == BoardEvaluatorType.NeuralNetwork)
+                    if (IsFilePathSelectionNeeded)
                     {
                         if (!File.Exists(textbox_networkFilePath.Text))
                         {
@@ -252,24 +255,24 @@ namespace Draughts.GUI
 
         private void Combobox_evaluator_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            bool isNetworkSelectionNeeded = IsNetworkSelectionNeeded;
+            bool isFilePathSelectionNeeded = IsFilePathSelectionNeeded;
 
-            label_networkFilePath.IsEnabled = isNetworkSelectionNeeded;
-            textbox_networkFilePath.IsEnabled = isNetworkSelectionNeeded;
-            button_selectNetworkFilePath.IsEnabled = isNetworkSelectionNeeded;
+            label_networkFilePath.IsEnabled = isFilePathSelectionNeeded;
+            textbox_networkFilePath.IsEnabled = isFilePathSelectionNeeded;
+            button_selectNetworkFilePath.IsEnabled = isFilePathSelectionNeeded;
         }
 
         private void Combobox_difficulty_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             bool isEvaluatorNeeded = IsEvaluatorNeeded;
-            bool isNetworkSelectionNeeded = IsNetworkSelectionNeeded;
+            bool isFilePathSelectionNeeded = IsFilePathSelectionNeeded;
 
             label_evaluator.IsEnabled = isEvaluatorNeeded;
             combobox_evaluator.IsEnabled = isEvaluatorNeeded;
 
-            label_networkFilePath.IsEnabled = isEvaluatorNeeded && isNetworkSelectionNeeded;
-            textbox_networkFilePath.IsEnabled = isEvaluatorNeeded && isNetworkSelectionNeeded;
-            button_selectNetworkFilePath.IsEnabled = isEvaluatorNeeded && isNetworkSelectionNeeded;
+            label_networkFilePath.IsEnabled = isEvaluatorNeeded && isFilePathSelectionNeeded;
+            textbox_networkFilePath.IsEnabled = isEvaluatorNeeded && isFilePathSelectionNeeded;
+            button_selectNetworkFilePath.IsEnabled = isEvaluatorNeeded && isFilePathSelectionNeeded;
         }
     }
 }
