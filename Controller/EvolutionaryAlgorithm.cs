@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Controller
 {
-    public class EvolutionaryAlgorithm
+    class EvolutionaryAlgorithm
     {
         public static string folderPath_eva = $"../../../local/eva";
 

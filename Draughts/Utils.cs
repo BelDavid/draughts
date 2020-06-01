@@ -67,5 +67,23 @@ namespace Draughts
             }
         }
 
+        public static RLModel LoadRLModel(string path)
+        {
+            if (!File.Exists(path) || !path.EndsWith($".h5"))
+            {
+                return null;
+            }
+
+            try
+            {
+                return new RLModel(path);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error reading from {path}\n{ex.Message}");
+                return null;
+            }
+        }
+
     }
 }

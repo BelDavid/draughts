@@ -13,7 +13,7 @@ namespace Draughts
         public int player0WinsBlack;
 
         public int ties;
-
+        
         public int player1WinsWhite;
         public int player1WinsBlack;
 
@@ -23,5 +23,7 @@ namespace Draughts
         public int player1LosesBlack => player0WinsWhite;
 
         public int total;
+
+        public List<List<BoardState>> histories;
     }
 }

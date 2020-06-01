@@ -1,5 +1,5 @@
 ﻿//#define EVA
-#define SIM
+#define RL
 
 using Draughts;
 using Draughts.BoardEvaluators;
@@ -38,20 +38,25 @@ namespace Controller
             };
             var gen = eva.Run();
 #endif
+#if RL
+            var rl = new ReinforcementLearning();
+            RLModel model = rl.TrainNewModel(10, 10, 2);
+            model.Save("testmodel.h5");
+#endif
 #if SIM
             var netId0 = $"{id}/gen49_net0";
             var nn0 = Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{netId0}.{Utils.neuralNetworkFileExt}");
-            int numberOfGames = 1000;
+            int numberOfGames = 10;
 
             void run(string simID, int depth)
             {
                 string bot0Id = null;
                 string bot1Id = null;
 
-                var simOut = SimulateParallel(
+                var simOut = SimulateSerial(
                     simID,
                     RulesType.Czech,
-                    () => new MinimaxBot(bot0Id = netId0, depth, new BoardEvaluatorNeuralNetwork(nn0), null),
+                    () => new MinimaxBot(bot0Id = "basic2", depth, new BoardEvaluatorBasic(), null),
                     () => new MinimaxBot(bot1Id = "basic", depth, new BoardEvaluatorBasic(), null),
                     numberOfGames
                 );
@@ -76,7 +81,7 @@ namespace Controller
 
         public static SimulationOutput SimulateSerial(string simulationID, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns)
         {
-            var output = new SimulationOutput() { total = numberOfRuns, };
+            var output = new SimulationOutput() { total = numberOfRuns, histories = new List<List<BoardState>>() };
 
             for (int i = 0; i < numberOfRuns; i++)
             {
@@ -114,11 +119,14 @@ namespace Controller
                             output.player1WinsBlack += 1;
                         }
                     }
+
+                    output.histories.Add(gameControl.StateHistory);
                 }
                 else if (finishReason == FinishReason.MoveLimitReached)
                 {
                     output.ties += 1;
                 }
+
             }
 
             return output;
@@ -170,6 +178,7 @@ namespace Controller
                                 output.player1WinsBlack += 1;
                             }
                         }
+                        output.histories.Add(gameControl.StateHistory);
                     }
                     else if (finishReason == FinishReason.MoveLimitReached)
                     {

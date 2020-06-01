@@ -140,6 +140,17 @@ namespace Draughts
                             return;
                         }
                         break;
+                    case BoardEvaluatorType.RLModel:
+                        RLModel model = Utils.LoadRLModel("testmodel.h5");
+                        if (model != null)
+                        {
+                            evaluator = new BoardEvaluatorRL(model);
+                        }
+                        else
+                        {
+                            return;
+                        }
+                        break;
 
                     default:
                         throw new NotImplementedException();

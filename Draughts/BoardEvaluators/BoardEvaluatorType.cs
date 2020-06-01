@@ -10,5 +10,6 @@ namespace Draughts.BoardEvaluators
     {
         Basic,
         NeuralNetwork,
+        RLModel
     }
 }
