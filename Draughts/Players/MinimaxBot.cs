@@ -31,7 +31,7 @@ namespace Draughts.Players
         private readonly bool allowCaching;
         private readonly bool allowAlphaBetaCutting;
         private readonly IBoardEvaluator evaluator;
-        public readonly bool ruletteMoveSelection = false;
+        public bool ruletteMoveSelection = false;
 
         protected override void AfterSetup()
         {
