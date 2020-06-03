@@ -31,7 +31,7 @@ namespace Controller
                     gamesPerBatch
                 );
 
-                List<Numpy.NDarray<float>> x = new List<Numpy.NDarray<float>>();
+                List<Numpy.NDarray> x = new List<Numpy.NDarray>();
                 List<float> y = new List<float>();
                 List<float> weights = new List<float>();
 
@@ -55,7 +55,7 @@ namespace Controller
                         ++curIndex;
                     }
                 }
-                Numpy.NDarray npx = Numpy.np.stack(x.ToArray());
+                Numpy.NDarray npx = np.stack(x.ToArray());
                 Numpy.NDarray npy = (Numpy.NDarray)y.ToArray();
                 Numpy.NDarray npweights = (Numpy.NDarray)weights.ToArray();
                 
