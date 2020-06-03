@@ -1,32 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 using Draughts.Pieces;
 using Numpy;
+using Keras.Models;
+using Keras.Layers;
 
 namespace Draughts.BoardEvaluators
 {
     [Serializable]
     public class RLModel
     {
-        private Keras.Models.Sequential _model;
+        private BaseModel _model;
 
         public RLModel()
         {
-            _model = new Keras.Models.Sequential();
-            _model.Add(new Keras.Layers.Dense(512, activation: "relu", input_shape: new Keras.Shape(new int[] { 32 })));
-            _model.Add(new Keras.Layers.Dense(512, activation: "relu"));
-            _model.Add(new Keras.Layers.Dense(1, activation: "linear"));
+            var sModel = new Sequential();
+            sModel.Add(new Dense(512, activation: "relu", input_shape: new Keras.Shape(new int[] { 32 })));
+            sModel.Add(new Dense(512, activation: "relu"));
+            sModel.Add(new Dense(1, activation: "linear"));
+
+            _model = sModel;
 
             _model.Compile(optimizer: new Keras.Optimizers.Adam(), loss: "binary_crossentropy", metrics: new string[] { "accuracy" });
         }
 
         public RLModel(string path)
         {
-            _model = (Keras.Models.Sequential)Keras.Models.Sequential.LoadModel(path);
+            _model = BaseModel.LoadModel(path);
         }
 
         public void TrainOnBatch(NDarray x, NDarray y, NDarray weights)
@@ -34,20 +39,21 @@ namespace Draughts.BoardEvaluators
             _model.TrainOnBatch(x, y, weights);
         }
 
-        public float Predict(NDarray<float> x)
+        public float Predict(NDarray x)
         {
             NDarray x_reshaped = x.reshape(new int[] { 1, -1 });
             return _model.Predict(x_reshaped, verbose: 0).item<float>(0);
         }
 
-        public void Save(string filepath)
+        public void Save(string path)
         {
-            _model.Save(filepath);
+            _model.Save(path);
         }
 
-        public static NDarray<float> ConvertBoardStateToModelInput(BoardState state)
+        public static NDarray ConvertBoardStateToModelInput(BoardState state)
         {
-            List<float> boardState = new List<float>();
+            NDarray boardState = np.zeros(new int[] { 32 });
+            int i = 0;
             foreach (var (pos, pieceType) in state.IterateBoard())
             {
                 if ((pos.column + pos.row) % 2 == 0)
@@ -59,12 +65,12 @@ namespace Draughts.BoardEvaluators
                         : Utils.GetRank(pieceType) == PieceRank.King ? 2f
                         : 0f;
 
-                boardState.Add(Utils.GetColor(pieceType) == PieceColor.White ? f
+                boardState.itemset(new object[] { i++, Utils.GetColor(pieceType) == PieceColor.White ? f
                      : Utils.GetColor(pieceType) == PieceColor.Black ? -f
-                     : 0f);
+                     : 0f });
             }
 
-            return (NDarray<float>)boardState.ToArray();
+            return boardState;
         }
     }
 }

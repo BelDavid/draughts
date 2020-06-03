@@ -244,7 +244,7 @@ namespace Draughts.GUI
                 Multiselect = false,
                 CheckFileExists = true,
                 DefaultExt = $".{Utils.neuralNetworkFileExt}",
-                Filter = $"*.{Utils.neuralNetworkFileExt} files|*.{Utils.neuralNetworkFileExt}",
+                Filter = $"*.{Utils.neuralNetworkFileExt} files|*.{Utils.neuralNetworkFileExt} | All files | *.*",
             };
 
             if (f.ShowDialog() ?? false)

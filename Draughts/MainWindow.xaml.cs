@@ -141,7 +141,7 @@ namespace Draughts
                         }
                         break;
                     case BoardEvaluatorType.RLModel:
-                        RLModel model = Utils.LoadRLModel("testmodel.h5");
+                        RLModel model = Utils.LoadRLModel(selector.neuralNetworkFilePath);
                         if (model != null)
                         {
                             evaluator = new BoardEvaluatorRL(model);
