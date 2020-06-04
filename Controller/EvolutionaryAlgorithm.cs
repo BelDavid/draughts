@@ -33,7 +33,6 @@ namespace Controller
         public int populationSize = 30;
         public int numberOfElites = 5;
         public int numberOfGenerations = 10;
-        public int numberOfGameRounds = 50;
         public int numberOfCompetetiveMatches = 50;
 
         public int minimaxDepth = 3;
@@ -69,17 +68,16 @@ namespace Controller
             Directory.CreateDirectory(folderPath_run);
             using (var sw = new StreamWriter($"{folderPath_run}/settings.txt"))
             {
-                sw.WriteLine($"id = {id}");
-                sw.WriteLine($"rulesType = {Enum.GetName(typeof(RulesType), rulesType)}");
-                sw.WriteLine($"neuronLayout = [{string.Join(",", neuronLayout)}]"); 
-                sw.WriteLine($"mutationRate = {mutationRate}"); 
-                sw.WriteLine($"mutationBitRate = {mutationBitRate}");
-                sw.WriteLine($"crossoverRate = {crossoverRate}");
-                sw.WriteLine($"populationSize = {populationSize}");
-                sw.WriteLine($"numberOfElites = {numberOfElites}");
-                sw.WriteLine($"numberOfGameRounds = {numberOfGameRounds}");
-                sw.WriteLine($"minimaxDepth = {minimaxDepth}");
-                sw.WriteLine($"numberOfCompetetiveMatches = {numberOfCompetetiveMatches}");
+                sw.WriteLine($"id={id}");
+                sw.WriteLine($"rulesType={Enum.GetName(typeof(RulesType), rulesType)}");
+                sw.WriteLine($"neuronLayout=[{string.Join(",", neuronLayout)}]"); 
+                sw.WriteLine($"mutationRate={mutationRate}"); 
+                sw.WriteLine($"mutationBitRate={mutationBitRate}");
+                sw.WriteLine($"crossoverRate={crossoverRate}");
+                sw.WriteLine($"populationSize={populationSize}");
+                sw.WriteLine($"numberOfElites={numberOfElites}");
+                sw.WriteLine($"minimaxDepth={minimaxDepth}");
+                sw.WriteLine($"numberOfCompetetiveMatches={numberOfCompetetiveMatches}");
             }
         }
 
