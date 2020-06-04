@@ -30,7 +30,7 @@ namespace Controller
             {
                 paralelisedMatches = true,
                 minimaxDepth = 3,
-                numberOfGenerations = 50,
+                numberOfGenerations = 30,
                 populationSize = 30,
                 mutationBitRate = 1d,
                 crossoverRate = .5d,
@@ -82,7 +82,7 @@ namespace Controller
             //run($"sim4", 4);
             //run($"sim5", 5);
 
-            for (int i = 1; i < 2; i++)
+            for (int i = 1; i < 4; i++)
             {
                 run($"sim{i}", i);
             }
