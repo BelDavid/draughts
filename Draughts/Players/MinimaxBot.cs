@@ -183,6 +183,12 @@ namespace Draughts.Players
                     for (int j = 0; j < fitmoves.Count; j++)
                     {
                         var fm = fitmoves[j];
+                        if (state.OnMove  ==  PieceColor.Black)
+                        {
+                            fm.fit *= -1;
+                            fitmoves[j] = fm;
+                        }
+
                         if (fm.fit < min)
                         {
                             min = fm.fit;
