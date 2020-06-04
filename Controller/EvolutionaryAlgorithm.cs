@@ -137,7 +137,14 @@ namespace Controller
 
         public NeuralNetwork GetRandomNetwork()
         {
-            var nn = new NeuralNetwork(neuronLayout, rulesType, i => 1.0f / (1.0f + (float)Math.Exp(-i)));
+            var aft = new ActivationFunctionType[neuronLayout.Length - 1];
+            for (int i = 0; i < aft.Length - 1; i++)
+            {
+                aft[i] = ActivationFunctionType.Sigmoid;
+            }
+            aft[aft.Length - 1] = ActivationFunctionType.Linear;
+
+            var nn = new NeuralNetwork(neuronLayout, rulesType, aft);
 
             for (int i = 0; i < nn.weights.Length; i++)
             {
@@ -176,8 +183,8 @@ namespace Controller
 
         public (NeuralNetwork, NeuralNetwork) CrossOver(NeuralNetwork a0, NeuralNetwork b0)
         {
-            var a1 = new NeuralNetwork(neuronLayout, rulesType, a0.activationFunction);
-            var b1 = new NeuralNetwork(neuronLayout, rulesType, b0.activationFunction);
+            var a1 = new NeuralNetwork(neuronLayout, rulesType, a0.activationFunctionTypes);
+            var b1 = new NeuralNetwork(neuronLayout, rulesType, b0.activationFunctionTypes);
 
             for (int i = 0; i < neuronLayout.Length - 1; i++)
             {

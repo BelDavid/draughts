@@ -21,15 +21,23 @@ namespace Controller
             RLModel model = new RLModel();
             BoardEvaluatorRL evaluator = new BoardEvaluatorRL(model);
 
-            for(int i = 0; i < numberOfBatches; i++)
+            for (int i = 0; i < numberOfBatches; i++)
             {
                 SimulationOutput output = Program.SimulateSerial(
                     "test",
                     RulesType.Czech,
-                    () => new MinimaxBot("train", depth, evaluator, null),
-                    () => new MinimaxBot("train2", depth, evaluator, null),
+                    () => {
+                        MinimaxBot bot = new MinimaxBot("train", depth, evaluator, null);
+                        bot.ruletteMoveSelection = true;
+                        return bot;
+                    },
+                    () => {
+                        MinimaxBot bot = new MinimaxBot("train2", depth, evaluator, null);
+                        bot.ruletteMoveSelection = true;
+                        return bot;
+                    },
                     gamesPerBatch
-                );
+                ) ;
 
                 List<Numpy.NDarray> x = new List<Numpy.NDarray>();
                 List<float> y = new List<float>();

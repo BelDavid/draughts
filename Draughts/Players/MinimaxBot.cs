@@ -7,6 +7,9 @@ using System.Windows.Controls;
 using Draughts.Pieces;
 using Draughts.BoardEvaluators;
 using System.Windows.Threading;
+using Keras.Layers;
+using System.Reflection;
+using System.Windows.Media;
 
 namespace Draughts.Players
 {
@@ -28,6 +31,7 @@ namespace Draughts.Players
         private readonly bool allowCaching;
         private readonly bool allowAlphaBetaCutting;
         private readonly IBoardEvaluator evaluator;
+        public bool ruletteMoveSelection = false;
 
         protected override void AfterSetup()
         {
@@ -171,15 +175,69 @@ namespace Draughts.Players
                     return new FitMove(0, null);
                 }
 
-                var minmax =
-                    state.OnMove == PieceColor.White
-                    ? fitmoves.Max(fm => fm.fit)
-                    : fitmoves.Min(fm => fm.fit);
+                FitMove fitmove = default;
+                if (ruletteMoveSelection)
+                {
+                    double min = double.MaxValue;
+                    double max = double.MinValue;
+                    for (int j = 0; j < fitmoves.Count; j++)
+                    {
+                        var fm = fitmoves[j];
+                        if (state.OnMove  ==  PieceColor.Black)
+                        {
+                            fm.fit *= -1;
+                            fitmoves[j] = fm;
+                        }
 
-                var candidates = from fm in fitmoves where fm.fit >= minmax - .001d && fm.fit <= minmax + .001d select fm;
+                        if (fm.fit < min)
+                        {
+                            min = fm.fit;
+                        }
+                        if (fm.fit > max)
+                        {
+                            max = fm.fit;
+                        }
+                    }
 
-                // Select random fitmove from candidates
-                var fitmove = candidates.ElementAt(Utils.rand.Next(candidates.Count()));
+                    double delta = max - min;
+                    double shift = - min + delta / 10;
+                    min += shift;
+                    max += shift;
+                    for (int j = 0; j < fitmoves.Count; j++)
+                    {
+                        var fm = fitmoves[j];
+                        
+                        fm.fit += shift;
+
+                        fitmoves[j] = fm;
+                    }
+
+
+                    var wheelSums = new double[fitmoves.Count];
+                    double sum = 0;
+                    for (int j = 0; j < fitmoves.Count; j++)
+                        wheelSums[j] = sum += fitmoves[j].fit;
+
+                    double r = Utils.rand.NextDouble() * sum;
+                    int k = 0;
+                    while (wheelSums[k] < r)
+                    {
+                        k++;
+                    }
+                    fitmove = fitmoves[k];
+                }
+                else
+                {
+                    var minmax =
+                        state.OnMove == PieceColor.White
+                        ? fitmoves.Max(fm => fm.fit)
+                        : fitmoves.Min(fm => fm.fit);
+
+                    var candidates = from fm in fitmoves where fm.fit >= minmax - .001d && fm.fit <= minmax + .001d select fm;
+
+                    // Select random fitmove from candidates
+                    fitmove = candidates.ElementAt(Utils.rand.Next(candidates.Count()));
+                }
 
                 // Caching
                 if (allowCaching)
