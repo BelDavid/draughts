@@ -47,6 +47,10 @@ namespace Draughts
             InitializeComponent();
 
             Title = defaultTitle;
+
+
+            gameControl = new GameControl("asfjd", RulesType.Czech, new MinimaxBot("minmax_bot", 5, new BoardEvaluatorBasic(), progressbar_bot), new RandomizedBot("rand_bot"));
+            visualiser = gameControl.GetVisualiser(this);
         }
 
 

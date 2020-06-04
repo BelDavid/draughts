@@ -1,5 +1,5 @@
 ﻿//#define EVA
-#define RL
+#define SIM
 
 using Draughts;
 using Draughts.BoardEvaluators;
@@ -46,7 +46,7 @@ namespace Controller
 #if SIM
             var netId0 = $"{id}/gen49_net0";
             var nn0 = Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{netId0}.{Utils.neuralNetworkFileExt}");
-            int numberOfGames = 10;
+            int numberOfGames = 40;
 
             void run(string simID, int depth)
             {
