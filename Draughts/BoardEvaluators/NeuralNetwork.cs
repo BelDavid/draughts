@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace Draughts.BoardEvaluators
 {
@@ -13,14 +14,41 @@ namespace Draughts.BoardEvaluators
     {
         public readonly int[] neuronLayout;
         public readonly double[][,] weights;
-        public readonly Func<double, double> activationFunction;
+        public readonly ActivationFunctionType[] activationFunctionTypes;
+        public readonly ActivationFunctionDelegate[] activationFunctions;
         public readonly RulesType rulesType;
 
-        public NeuralNetwork(int[] neuronLayout, RulesType rulesType, Func<double, double> activationFunction)
+        public NeuralNetwork(int[] neuronLayout, RulesType rulesType, ActivationFunctionType[] activationFunctionTypes)
         {
             this.rulesType = rulesType;
             this.neuronLayout = neuronLayout ?? throw new ArgumentNullException("Argument neurons can not be null");
-            this.activationFunction = activationFunction;
+
+            this.activationFunctionTypes = activationFunctionTypes ?? throw new ArgumentNullException("Argument activationFunctionTypes can not be null");
+            if (activationFunctionTypes.Length != neuronLayout.Length - 1)
+            {
+                throw new ArgumentException(""); // TODO
+            }
+            activationFunctions = new ActivationFunctionDelegate[activationFunctionTypes.Length];
+            for (int i = 0; i < activationFunctionTypes.Length; i++)
+            {
+                switch (activationFunctionTypes[i])
+                {
+                    case ActivationFunctionType.Sigmoid:
+                        activationFunctions[i] = Sigmoid;
+                        break;
+                    case ActivationFunctionType.Tanh:
+                        activationFunctions[i] = Tanh;
+                        break;
+                    case ActivationFunctionType.ReLu:
+                        activationFunctions[i] = ReLu;
+                        break;
+                    case ActivationFunctionType.Linear:
+                        activationFunctions[i] = Linear;
+                        break;
+                    default:
+                        throw new NotImplementedException("Invalid Activation function");
+                }
+            }
 
             if (neuronLayout.Length < 2)
             {
@@ -33,11 +61,33 @@ namespace Draughts.BoardEvaluators
                 weights[i] = new double[neuronLayout[i] + 1, neuronLayout[i + 1]];
             }
         }
-        public NeuralNetwork(double[][,] weights, RulesType rulesType, Func<double, double> activationFunction)
+        public NeuralNetwork(double[][,] weights, RulesType rulesType, ActivationFunctionType[] activationFunctionTypes)
         {
             this.rulesType = rulesType;
             this.weights = weights ?? throw new ArgumentNullException("Argument weights can not be null");
-            this.activationFunction = activationFunction;
+
+            this.activationFunctionTypes = activationFunctionTypes ?? throw new ArgumentNullException("Argument activationFunctionTypes can not be null");
+            activationFunctions = new ActivationFunctionDelegate[activationFunctionTypes.Length];
+            for (int i = 0; i < activationFunctionTypes.Length; i++)
+            {
+                switch (activationFunctionTypes[i])
+                {
+                    case ActivationFunctionType.Sigmoid:
+                        activationFunctions[i] = Sigmoid;
+                        break;
+                    case ActivationFunctionType.Tanh:
+                        activationFunctions[i] = Tanh;
+                        break;
+                    case ActivationFunctionType.ReLu:
+                        activationFunctions[i] = ReLu;
+                        break;
+                    case ActivationFunctionType.Linear:
+                        activationFunctions[i] = Linear;
+                        break;
+                    default:
+                        throw new NotImplementedException("Invalid Activation function");
+                }
+            }
 
             if (weights.Length < 1)
             {
@@ -89,7 +139,7 @@ namespace Draughts.BoardEvaluators
                     }
                     val += weights[i][neuronLayout[i], j]; // Treshold
 
-                    layoutOut[j] = activationFunction(val);
+                    layoutOut[j] = activationFunctions[i](val);
                 }
 
                 layoutIn = layoutOut;
@@ -97,5 +147,21 @@ namespace Draughts.BoardEvaluators
 
             return layoutIn;
         }
+
+
+        public delegate double ActivationFunctionDelegate(double val);
+        public static double Sigmoid(double val) => 1.0d / (1.0d + Math.Exp(-val));
+        public static double Tanh(double val) => throw new NotImplementedException();
+        public static double ReLu(double val) => throw new NotImplementedException();
+        public static double Linear(double val) => val;
+    }
+
+    [Serializable]
+    public enum ActivationFunctionType
+    {
+        Sigmoid,
+        Tanh,
+        ReLu,
+        Linear,
     }
 }

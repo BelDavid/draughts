@@ -23,7 +23,7 @@ namespace Controller
     {
         static void Main(string[] args)
         {
-            var id = "test1";
+            var id = "train01";
 
 #if EVA
             var eva = new EvolutionaryAlgorithm(id, new int[] { 10, 10, 10, }, RulesType.Czech)
@@ -44,8 +44,8 @@ namespace Controller
             model.Save("testmodelbig.h5");
 #endif
 #if SIM
-            var netId0 = $"{id}/gen49_net0";
-            var nn0 = Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{netId0}.{Utils.neuralNetworkFileExt}");
+            var netId1 = $"{id}/gen29_net0";
+            var nn1 = Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{netId1}.{Utils.neuralNetworkFileExt}");
             RLModel model = Utils.LoadRLModel("testmodelbig.h5");
             int numberOfGames = 100;
 
@@ -59,7 +59,7 @@ namespace Controller
                     simID,
                     RulesType.Czech,
                     () => new MinimaxBot(bot0Id = "rl", depth, new BoardEvaluatorRL(model), null),
-                    () => new MinimaxBot(bot1Id = "basic", depth, new BoardEvaluatorBasic(), null),
+                    () => new MinimaxBot(bot1Id = "basic", depth, new BoardEvaluatorNeuralNetwork(nn1), null),
                     numberOfGames
                 );
                 Console.WriteLine($"[{simID}] {bot0Id}: (w:{simOut.player0WinsWhite} b:{simOut.player0WinsBlack}) | ties: {simOut.ties} | {bot1Id}: (w:{simOut.player1WinsWhite} b:{simOut.player1WinsBlack})");
