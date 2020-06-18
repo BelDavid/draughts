@@ -1,4 +1,6 @@
 .vs/*
 Draughts/bin
 Draughts/obj
+Controller/bin
+Controller/obj
 local/*

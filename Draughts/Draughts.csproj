@@ -63,7 +63,9 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BoardEvaluators\BoardEvaluatorBasic.cs" />
+    <Compile Include="BoardEvaluators\BoardEvaluatorBasic1.cs" />
     <Compile Include="BoardEvaluators\BoardEvaluatorNeuralNetwork.cs" />
+    <Compile Include="BoardEvaluators\BoardEvaluatorProgressive.cs" />
     <Compile Include="BoardEvaluators\BoardEvaluatorType.cs" />
     <Compile Include="BoardEvaluators\NeuralNetwork.cs" />
     <Compile Include="BoardState.cs" />

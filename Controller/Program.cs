@@ -21,12 +21,21 @@ namespace Controller
 {
     class Program
     {
+        public const string separator = "------------------------------------------------------";
+
         static void Main(string[] args)
         {
-            var id = "train01";
+            // TrainEvA();
+            RunSimulation();
 
-#if EVA
-            var eva = new EvolutionaryAlgorithm(id, new int[] { 10, 10, 10, }, RulesType.Czech)
+            Console.Write("Press Enter to exit..."); 
+            Console.ReadLine();
+        }
+
+        private static void TrainEvA()
+        {
+            string evaID = "basic0_vs_basic1";
+            var eva = new EvolutionaryAlgorithm(evaID, new int[] { 10, 10, 10, }, RulesType.Czech)
             {
                 paralelisedMatches = true,
                 minimaxDepth = 3,
@@ -37,60 +46,100 @@ namespace Controller
                 numberOfCompetetiveMatches = 50,
             };
             var gen = eva.Run();
-#endif
-#if SIM
+        }
+
+        private static void RunSimulation()
+        {
+            // Initialise
+            //string simID = "basic_vs_basic(d=2)";
+            string simID = "basic_vs_random";
+
             const string simFolderPath = "../../../local/sim";
             if (!Directory.Exists(simFolderPath))
             {
                 Directory.CreateDirectory(simFolderPath);
             }
 
-            var netId0 = $"{id}/gen29_net0";
-            var nn0 = Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{netId0}.{Utils.neuralNetworkFileExt}");
-            int numberOfGames = 1000;
+            // Load
+            //var netId0 = $"{id}/gen29_net0";
+            //var nn0 = Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{netId0}.{Utils.neuralNetworkFileExt}");
 
-            void run(string simID, int depth)
+            // Setup
+            int numberOfGames = 500;
+            string simFilePath = $"{simFolderPath}/{simID}.txt";
+
+            using (var sw = new StreamWriter(simFilePath, true))
+            {
+                sw.WriteLine("Bots:");
+                sw.Write(
+@"- basic:
+   - Depth-limited minimax with state evaluation:
+      - White man:   1
+      - White King:  5
+      - Black man:  -1
+      - Black King: -5
+");
+                sw.Write(
+@"- random:
+   - Plays random moves
+");
+                //                sw.Write(
+                //@"- basic(d=2):
+                //   - Depth-limited minimax with state evaluation and depth fixed at 2:
+                //      - White man:   1
+                //      - White King:  5
+                //      - Black man:  -1
+                //      - Black King: -5
+                //");
+                sw.WriteLine();
+                sw.WriteLine($"Number of games per simulation: {numberOfGames}");
+                sw.WriteLine(separator);
+            }
+
+            // Run
+            for (int i = 1; i < 7; i++)
+            {
+                run($"run{i}", i);
+            }
+            void run(string runID, int depth)
             {
                 string bot0Id = null;
                 string bot1Id = null;
 
                 var simOut = SimulateParallel(
-                    simID,
+                    runID,
                     RulesType.Czech,
-                    () => new MinimaxBot(bot0Id = netId0, depth, new BoardEvaluatorNeuralNetwork(nn0), null),
-                    () => new MinimaxBot(bot1Id = "basic", depth, new BoardEvaluatorBasic(), null),
+                    //() => new MinimaxBot(bot0Id = netId0, depth, new BoardEvaluatorNeuralNetwork(nn0), null),
+                    () => new MinimaxBot(bot0Id = "basic", depth, new BoardEvaluatorBasic(), null),
+
+                    //() => new MinimaxBot(bot1Id = "basic(d=2)", 2, new BoardEvaluatorBasic(), null),
+                    //() => new MinimaxBot(bot1Id = "basic1", depth, new BoardEvaluatorBasic1(), null),
+                    () => new RandomizedBot(bot1Id = "random"),
                     numberOfGames
                 );
-                string message = $"[{simID}] {bot0Id}: (w:{simOut.player0WinsWhite} b:{simOut.player0WinsBlack}) | ties: {simOut.ties} | {bot1Id}: (w:{simOut.player1WinsWhite} b:{simOut.player1WinsBlack})";
+                string message = $"[{runID}] {bot0Id}: {simOut.player0Wins} (w:{simOut.player0WinsWhite} b:{simOut.player0WinsBlack}) | ties: {simOut.ties} | {bot1Id}: {simOut.player1Wins} (w:{simOut.player1WinsWhite} b:{simOut.player1WinsBlack})";
                 Console.WriteLine(message);
-                using (var sw = new StreamWriter($"{simFolderPath}/{id}.txt", true))
+                using (var sw = new StreamWriter(simFilePath, true))
                 {
-                    sw.WriteLine($"simID={simID}");
-                    
-                    sw.WriteLine($"depth = {depth}");
-                    
-                    sw.WriteLine($"{bot0Id} wins: [white: {simOut.player0WinsWhite}, black: {simOut.player0WinsBlack}]");
+                    sw.WriteLine($"runID: {runID}");
+                    sw.WriteLine($"depth: {depth}");
+
+                    sw.WriteLine($"{bot0Id} wins: {simOut.player0Wins} [white: {simOut.player0WinsWhite}, black: {simOut.player0WinsBlack}]");
                     sw.WriteLine($"ties: {simOut.ties}");
-                    sw.WriteLine($"{bot1Id} wins: [white: {simOut.player1WinsWhite}, black:{simOut.player1WinsBlack}]");
-                    sw.WriteLine("---------------------------");
+                    sw.WriteLine($"{bot1Id} wins: {simOut.player1Wins} [white: {simOut.player1WinsWhite}, black: {simOut.player1WinsBlack}]");
+
+                    sw.WriteLine(separator);
                 }
             }
 
-            //run($"sim1", 1);
-            //run($"sim2", 2);
-            //run($"sim3", 3);
-            //run($"sim4", 4);
-            //run($"sim5", 5);
-
-            for (int i = 1; i < 4; i++)
+            // Finalise
+            using (var sw = new StreamWriter(simFilePath, true))
             {
-                run($"sim{i}", i);
+                sw.WriteLine();
+                sw.WriteLine(separator);
             }
-#endif
-
-            Console.Write("Press Enter to exit...");
-            Console.ReadLine();
         }
+
 
         public static SimulationOutput SimulateSerial(string simulationID, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns)
         {
@@ -148,7 +197,7 @@ namespace Controller
             
             int done = 0;
             var objectLock = new object();
-            Console.Write($"0/{numberOfRuns}");
+            Console.Write($"[{simulationID}] 0/{numberOfRuns}");
 
             Parallel.For(0, numberOfRuns, i =>
             {
@@ -196,12 +245,12 @@ namespace Controller
 
                     done += 1;
                     Console.CursorLeft = 0;
-                    Console.Write($"{done}/{numberOfRuns}".PadRight(20));
+                    Console.Write($"[{simulationID}] {done}/{numberOfRuns}".PadRight(30));
                 }
             });
 
             Console.CursorLeft = 0;
-            Console.Write(new string(' ', 20));
+            Console.Write(new string(' ', 30));
             Console.CursorLeft = 0;
 
 

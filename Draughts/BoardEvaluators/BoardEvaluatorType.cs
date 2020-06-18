@@ -9,6 +9,7 @@ namespace Draughts.BoardEvaluators
     public enum BoardEvaluatorType
     {
         Basic,
+        Progressive,
         NeuralNetwork,
     }
 }

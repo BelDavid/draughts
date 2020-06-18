@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using Draughts.Pieces;
 using Draughts.BoardEvaluators;
 using System.Windows.Threading;
+using System.Diagnostics;
 
 namespace Draughts.Players
 {
@@ -171,12 +172,12 @@ namespace Draughts.Players
                     return new FitMove(0, null);
                 }
 
-                var minmax =
+                double bestFitness =
                     state.OnMove == PieceColor.White
                     ? fitmoves.Max(fm => fm.fit)
                     : fitmoves.Min(fm => fm.fit);
 
-                var candidates = from fm in fitmoves where fm.fit >= minmax - .001d && fm.fit <= minmax + .001d select fm;
+                var candidates = from fm in fitmoves where fm.fit >= bestFitness - .001d && fm.fit <= bestFitness + .001d select fm;
 
                 // Select random fitmove from candidates
                 var fitmove = candidates.ElementAt(Utils.rand.Next(candidates.Count()));

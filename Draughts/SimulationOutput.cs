@@ -17,8 +17,12 @@ namespace Draughts
         public int player1WinsWhite;
         public int player1WinsBlack;
 
+        public int player0Wins => player0WinsWhite + player0WinsBlack;
+        public int player1Wins => player1WinsWhite + player1WinsBlack;
+
         public int player0LosesWhite => player1WinsBlack;
         public int player0LosesBlack => player1WinsWhite;
+
         public int player1LosesWhite => player0WinsBlack;
         public int player1LosesBlack => player0WinsWhite;
 
