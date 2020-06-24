@@ -10,6 +10,7 @@ using Draughts.Players;
 using Draughts.Rules;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -51,82 +52,93 @@ namespace Controller
         private static void RunSimulation()
         {
             // Initialise
-            //string simID = "basic_vs_basic(d=2)";
-            string simID = "basic_vs_random";
-
+            
             const string simFolderPath = "../../../local/sim";
             if (!Directory.Exists(simFolderPath))
             {
                 Directory.CreateDirectory(simFolderPath);
             }
 
-            // Load
             //var netId0 = $"{id}/gen29_net0";
             //var nn0 = Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{netId0}.{Utils.neuralNetworkFileExt}");
 
             // Setup
-            int numberOfGames = 500;
-            string simFilePath = $"{simFolderPath}/{simID}.txt";
-
-            using (var sw = new StreamWriter(simFilePath, true))
+            var bot_minimax_basic = new Bot
             {
-                sw.WriteLine("Bots:");
-                sw.Write(
-@"- basic:
+                id = "minimax_basic",
+                botFactory = (id, depth) => new MinimaxBot(id, depth, new BoardEvaluatorBasic(), null),
+description = @"- basic:
    - Depth-limited minimax with state evaluation:
       - White man:   1
       - White King:  5
       - Black man:  -1
       - Black King: -5
-");
-                sw.Write(
-@"- random:
+"
+            };
+            var bot_randomized = new Bot
+            {
+                id = "randomized",
+                botFactory = (id, _) => new RandomizedBot(id),
+description = @"- random:
    - Plays random moves
-");
-                //                sw.Write(
-                //@"- basic(d=2):
-                //   - Depth-limited minimax with state evaluation and depth fixed at 2:
-                //      - White man:   1
-                //      - White King:  5
-                //      - Black man:  -1
-                //      - Black King: -5
-                //");
+"
+            };
+            var minimax_basic_depth_2 = new Bot
+            {
+                id = "minimax_basic_depth=2",
+                botFactory = (id, _) => new MinimaxBot(id, 2, new BoardEvaluatorBasic(), null),
+description = @"- basic(d=2):
+   - Depth-limited minimax with state evaluation and depth fixed at 2:
+      - White man:   1
+      - White King:  5
+      - Black man:  -1
+      - Black King: -5
+"
+            };
+
+            var bot0 = bot_minimax_basic;
+            var bot1 = bot_randomized;
+            int numberOfGames = 100;
+
+
+            string simID = $"{bot0.id}_vs_{bot1.id}";
+            string simFilePath = $"{simFolderPath}/{simID}.txt";
+
+            using (var sw = new StreamWriter(simFilePath, true))
+            {
+                sw.WriteLine("Bots:");
+                sw.Write(bot0.description);
+                sw.Write(bot1.description);
+                
                 sw.WriteLine();
                 sw.WriteLine($"Number of games per simulation: {numberOfGames}");
                 sw.WriteLine(separator);
             }
 
             // Run
-            for (int i = 1; i < 7; i++)
+            for (int i = 1; i < 5; i++)
             {
                 run($"run{i}", i);
             }
             void run(string runID, int depth)
             {
-                string bot0Id = null;
-                string bot1Id = null;
-
                 var simOut = SimulateParallel(
                     runID,
                     RulesType.Czech,
-                    //() => new MinimaxBot(bot0Id = netId0, depth, new BoardEvaluatorNeuralNetwork(nn0), null),
-                    () => new MinimaxBot(bot0Id = "basic", depth, new BoardEvaluatorBasic(), null),
-
-                    //() => new MinimaxBot(bot1Id = "basic(d=2)", 2, new BoardEvaluatorBasic(), null),
-                    //() => new MinimaxBot(bot1Id = "basic1", depth, new BoardEvaluatorBasic1(), null),
-                    () => new RandomizedBot(bot1Id = "random"),
+                    bot0.GetBotFactory(depth),
+                    bot1.GetBotFactory(depth),
                     numberOfGames
                 );
-                string message = $"[{runID}] {bot0Id}: {simOut.player0Wins} (w:{simOut.player0WinsWhite} b:{simOut.player0WinsBlack}) | ties: {simOut.ties} | {bot1Id}: {simOut.player1Wins} (w:{simOut.player1WinsWhite} b:{simOut.player1WinsBlack})";
+                string message = $"[{runID}] {bot0.id}: {simOut.player0Wins} (w:{simOut.player0WinsWhite} b:{simOut.player0WinsBlack}) | ties: {simOut.ties} | {bot1.id}: {simOut.player1Wins} (w:{simOut.player1WinsWhite} b:{simOut.player1WinsBlack})";
                 Console.WriteLine(message);
                 using (var sw = new StreamWriter(simFilePath, true))
                 {
                     sw.WriteLine($"runID: {runID}");
                     sw.WriteLine($"depth: {depth}");
 
-                    sw.WriteLine($"{bot0Id} wins: {simOut.player0Wins} [white: {simOut.player0WinsWhite}, black: {simOut.player0WinsBlack}]");
+                    sw.WriteLine($"{bot0.id} wins: {simOut.player0Wins} [white: {simOut.player0WinsWhite}, black: {simOut.player0WinsBlack}]");
                     sw.WriteLine($"ties: {simOut.ties}");
-                    sw.WriteLine($"{bot1Id} wins: {simOut.player1Wins} [white: {simOut.player1WinsWhite}, black: {simOut.player1WinsBlack}]");
+                    sw.WriteLine($"{bot1.id} wins: {simOut.player1Wins} [white: {simOut.player1WinsWhite}, black: {simOut.player1WinsBlack}]");
 
                     sw.WriteLine(separator);
                 }
@@ -140,6 +152,13 @@ namespace Controller
             }
         }
 
+        private class Bot
+        {
+            public string id;
+            public Func<string, int, Player> botFactory; // id, depth, out Player
+            public Func<Player> GetBotFactory(int depth) => () => botFactory(id, depth);
+            public string description;
+        }
 
         public static SimulationOutput SimulateSerial(string simulationID, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns)
         {
@@ -215,6 +234,8 @@ namespace Controller
                 {
                     if (finishReason == FinishReason.OnePlayerWon)
                     {
+                        //Debug.WriteLine($"{gameControl.Winner.id} won");
+
                         if (gameControl.Winner == bot0)
                         {
                             if (bot0.Color == PieceColor.White)

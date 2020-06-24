@@ -27,7 +27,7 @@ namespace Draughts.BoardEvaluators
         {
             var input = new double[state.NumberOfColumns * state.NumberOfRows / 2];
 
-            foreach (var (pos, pieceType) in state.IterateValidPlacesOnBoard())
+            foreach (var (pos, pieceType) in state.IterateBoard())
             {
                 if (pieceType != PieceType.None)
                 {

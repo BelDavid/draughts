@@ -17,7 +17,7 @@ namespace Draughts.BoardEvaluators
         {
             double fit = 0d;
 
-            foreach (var (_, pieceType) in state.IterateValidPlacesOnBoard())
+            foreach (var (_, pieceType) in state.IterateBoard())
             {
                 if (pieceType != PieceType.None)
                 {

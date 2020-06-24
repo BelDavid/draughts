@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows;
+using System.Diagnostics;
+using Draughts.BoardEvaluators;
 
 namespace Draughts.Game
 {
@@ -59,8 +61,8 @@ namespace Draughts.Game
             gameRules = Utils.GetGameRules(rules);
 
             players = new Player[] {
-                firstPlayer ?? throw new ArgumentNullException("WhitePlayer can not be null"),
-                secondPlayer ?? throw new ArgumentNullException("BlackPlayer can not be null"),
+                firstPlayer ?? throw new ArgumentNullException("Argument firstPlayer can not be null"),
+                secondPlayer ?? throw new ArgumentNullException("Argument secondPlayer can not be null"),
             };
 
             if (gameRules.GetStartingColor() == PieceColor.White)
@@ -116,7 +118,6 @@ namespace Draughts.Game
         }
         public void Terminate(bool abortThread, bool disposeVisualiserOnFinish)
         {
-            // TODO stop properly
             IsTerminated = true;
             if (abortThread)
             {
@@ -159,26 +160,26 @@ namespace Draughts.Game
 
                 else if (move != null)
                 {
-                if (IsReplay)
-                {
-                    if (animationSpeed == AnimationSpeed.Manual)
+                    if (IsReplay)
                     {
-                        lock (signaler_replayStep)
+                        if (animationSpeed == AnimationSpeed.Manual)
                         {
-                            Monitor.Wait(signaler_replayStep);
-                        }
-                    }
-                    else
-                    {
-                        lock (signaler_pause)
-                        {
-                            while (IsPaused)
+                            lock (signaler_replayStep)
                             {
-                                Monitor.Wait(signaler_pause, 1000);
+                                Monitor.Wait(signaler_replayStep);
+                            }
+                        }
+                        else
+                        {
+                            lock (signaler_pause)
+                            {
+                                while (IsPaused)
+                                {
+                                    Monitor.Wait(signaler_pause, 1000);
+                                }
                             }
                         }
                     }
-                }
                     CurrentBoardState = CurrentBoardState.ApplyMove(move);
                     MoveHistory.Add(move);
                     StateHistory.Add(CurrentBoardState);
