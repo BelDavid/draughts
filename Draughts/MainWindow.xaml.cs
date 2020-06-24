@@ -47,13 +47,6 @@ namespace Draughts
             InitializeComponent();
 
             Title = defaultTitle;
-
-            gameControl = new GameControl("sdf", RulesType.Czech,
-                new RandomizedBot("random"),
-                new MinimaxBot("basic", 5, new BoardEvaluatorBasic(), progressbar_bot)
-            );
-
-            visualiser = gameControl.GetVisualiser(this);
         }
 
 

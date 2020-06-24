@@ -52,7 +52,6 @@ namespace Controller
         private static void RunSimulation()
         {
             // Initialise
-            
             const string simFolderPath = "../../../local/sim";
             if (!Directory.Exists(simFolderPath))
             {
@@ -62,12 +61,12 @@ namespace Controller
             //var netId0 = $"{id}/gen29_net0";
             //var nn0 = Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{netId0}.{Utils.neuralNetworkFileExt}");
 
-            // Setup
+            // Setup bots
             var bot_minimax_basic = new Bot
             {
                 id = "minimax_basic",
                 botFactory = (id, depth) => new MinimaxBot(id, depth, new BoardEvaluatorBasic(), null),
-description = @"- basic:
+description = (id) => $@"- {id}:
    - Depth-limited minimax with state evaluation:
       - White man:   1
       - White King:  5
@@ -79,7 +78,7 @@ description = @"- basic:
             {
                 id = "randomized",
                 botFactory = (id, _) => new RandomizedBot(id),
-description = @"- random:
+description = (id) => $@"- {id}:
    - Plays random moves
 "
             };
@@ -87,7 +86,7 @@ description = @"- random:
             {
                 id = "minimax_basic_depth=2",
                 botFactory = (id, _) => new MinimaxBot(id, 2, new BoardEvaluatorBasic(), null),
-description = @"- basic(d=2):
+description = (id) => $@"- {id}:
    - Depth-limited minimax with state evaluation and depth fixed at 2:
       - White man:   1
       - White King:  5
@@ -96,19 +95,21 @@ description = @"- basic(d=2):
 "
             };
 
+            // Choose bots
             var bot0 = bot_minimax_basic;
-            var bot1 = bot_randomized;
-            int numberOfGames = 100;
+            var bot1 = minimax_basic_depth_2;
 
+            // Setup game
+            int numberOfGames = 1000;
 
+            // Setup log
             string simID = $"{bot0.id}_vs_{bot1.id}";
             string simFilePath = $"{simFolderPath}/{simID}.txt";
-
             using (var sw = new StreamWriter(simFilePath, true))
             {
                 sw.WriteLine("Bots:");
-                sw.Write(bot0.description);
-                sw.Write(bot1.description);
+                sw.Write(bot0.GetDescription());
+                sw.Write(bot1.GetDescription());
                 
                 sw.WriteLine();
                 sw.WriteLine($"Number of games per simulation: {numberOfGames}");
@@ -116,7 +117,7 @@ description = @"- basic(d=2):
             }
 
             // Run
-            for (int i = 1; i < 5; i++)
+            for (int i = 1; i < 6; i++)
             {
                 run($"run{i}", i);
             }
@@ -133,12 +134,21 @@ description = @"- basic(d=2):
                 Console.WriteLine(message);
                 using (var sw = new StreamWriter(simFilePath, true))
                 {
-                    sw.WriteLine($"runID: {runID}");
-                    sw.WriteLine($"depth: {depth}");
+                    sw.WriteLine($"Run: {runID}");
 
-                    sw.WriteLine($"{bot0.id} wins: {simOut.player0Wins} [white: {simOut.player0WinsWhite}, black: {simOut.player0WinsBlack}]");
-                    sw.WriteLine($"ties: {simOut.ties}");
-                    sw.WriteLine($"{bot1.id} wins: {simOut.player1Wins} [white: {simOut.player1WinsWhite}, black: {simOut.player1WinsBlack}]");
+                    sw.WriteLine($"Settings:");
+                    sw.WriteLine($" - depth: {depth}");
+
+                    sw.WriteLine($"Score:");
+                    sw.WriteLine($" - Bot '{bot0.id}' wins: {simOut.player0Wins}");
+                    sw.WriteLine($"    - white: {simOut.player0WinsWhite}");
+                    sw.WriteLine($"    - black: {simOut.player0WinsBlack}");
+
+                    sw.WriteLine($" - Ties: {simOut.ties}");
+
+                    sw.WriteLine($" - Bot '{bot1.id}' wins: {simOut.player1Wins}");
+                    sw.WriteLine($"    - white: {simOut.player1WinsWhite}");
+                    sw.WriteLine($"    - black: {simOut.player1WinsBlack}");
 
                     sw.WriteLine(separator);
                 }
@@ -147,7 +157,6 @@ description = @"- basic(d=2):
             // Finalise
             using (var sw = new StreamWriter(simFilePath, true))
             {
-                sw.WriteLine();
                 sw.WriteLine(separator);
             }
         }
@@ -156,8 +165,10 @@ description = @"- basic(d=2):
         {
             public string id;
             public Func<string, int, Player> botFactory; // id, depth, out Player
+            public Func<string, string> description;
+
             public Func<Player> GetBotFactory(int depth) => () => botFactory(id, depth);
-            public string description;
+            public string GetDescription() => description(id);
         }
 
         public static SimulationOutput SimulateSerial(string simulationID, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns)
@@ -209,7 +220,6 @@ description = @"- basic(d=2):
 
             return output;
         }
-
         public static SimulationOutput SimulateParallel(string simulationID, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns)
         {
             var output = new SimulationOutput() { total = numberOfRuns, };
