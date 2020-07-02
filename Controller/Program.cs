@@ -26,7 +26,7 @@ namespace Controller
 
         static void Main(string[] args)
         {
-            // TrainEvA();
+            //TrainEvA();
             RunSimulation();
 
             Console.Write("Press Enter to exit..."); 
@@ -35,16 +35,18 @@ namespace Controller
 
         private static void TrainEvA()
         {
-            string evaID = "basic0_vs_basic1";
-            var eva = new EvolutionaryAlgorithm(evaID, new int[] { 10, 10, 10, }, RulesType.Czech)
+            string evaID = "test04";
+            var eva = new EvolutionaryAlgorithm(evaID, new int[] { }, RulesType.Czech)
             {
                 paralelisedMatches = true,
                 minimaxDepth = 3,
-                numberOfGenerations = 30,
-                populationSize = 30,
-                mutationBitRate = 1d,
-                crossoverRate = .5d,
-                numberOfCompetetiveMatches = 50,
+                numberOfGenerations = 200,
+                populationSize = 50,
+                mutationRate = .2d,
+                mutationBitRate = .1d,
+                mutationScatter = 2d,
+                crossoverRate = 0d,
+                numberOfCompetetiveMatches = 100,
             };
             var gen = eva.Run();
         }
@@ -58,49 +60,103 @@ namespace Controller
                 Directory.CreateDirectory(simFolderPath);
             }
 
-            //var netId0 = $"{id}/gen29_net0";
-            //var nn0 = Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/run_{netId0}.{Utils.neuralNetworkFileExt}");
-
-            // Setup bots
-            var bot_minimax_basic = new Bot
+            // Setup bots | created using lambda function, so they are not created, unless chosen
+            const string bot_randomized_id = "randomized";
+            Func<Bot> bot_randomized = () => new Bot
             {
-                id = "minimax_basic",
-                botFactory = (id, depth) => new MinimaxBot(id, depth, new BoardEvaluatorBasic(), null),
-description = (id) => $@"- {id}:
-   - Depth-limited minimax with state evaluation:
-      - White man:   1
-      - White King:  5
-      - Black man:  -1
-      - Black King: -5
-"
-            };
-            var bot_randomized = new Bot
-            {
-                id = "randomized",
-                botFactory = (id, _) => new RandomizedBot(id),
-description = (id) => $@"- {id}:
+                id = bot_randomized_id,
+                botFactory = _ => new RandomizedBot(bot_randomized_id),
+                description = $@"- {bot_randomized_id}
    - Plays random moves
 "
             };
-            var minimax_basic_depth_2 = new Bot
+
+            const string bot_minimax_basic_id = "minimax_basic";
+            Func<Bot> bot_minimax_basic = () => new Bot
             {
-                id = "minimax_basic_depth=2",
-                botFactory = (id, _) => new MinimaxBot(id, 2, new BoardEvaluatorBasic(), null),
-description = (id) => $@"- {id}:
+                id = bot_minimax_basic_id,
+                botFactory = depth => new MinimaxBot(bot_minimax_basic_id, depth, new BoardEvaluatorBasic(), null),
+                description = $@"- {bot_minimax_basic_id}:
+   - Depth-limited minimax with state evaluation:
+      - White man:   {BoardEvaluatorBasic.weightMan}
+      - White King:  {BoardEvaluatorBasic.weightKing}
+      - Black man:  -{BoardEvaluatorBasic.weightMan}
+      - Black King: -{BoardEvaluatorBasic.weightKing}
+"
+            };
+
+            const string bot_minimax_basic_depth_2_id = "minimax_basic_depth=2";
+            Func<Bot> bot_minimax_basic_depth_2 = () => new Bot
+            {
+                id = bot_minimax_basic_depth_2_id,
+                botFactory = _ => new MinimaxBot(bot_minimax_basic_depth_2_id, 2, new BoardEvaluatorBasic(), null),
+                description = $@"- {bot_minimax_basic_depth_2_id}:
    - Depth-limited minimax with state evaluation and depth fixed at 2:
-      - White man:   1
+      - White man:   {BoardEvaluatorBasic.weightMan}
+      - White King:  {BoardEvaluatorBasic.weightKing}
+      - Black man:  -{BoardEvaluatorBasic.weightMan}
+      - Black King: -{BoardEvaluatorBasic.weightKing}
+"
+            };
+
+            const string bot_minimax_basic1_id = "minimax_basic1";
+            Func<Bot> bot_minimax_basic1 = () => new Bot
+            {
+                id = bot_minimax_basic1_id,
+                botFactory = depth => new MinimaxBot(bot_minimax_basic1_id, depth, new BoardEvaluatorBasic1(), null),
+                description = $@"- {bot_minimax_basic1_id}:
+   - Depth-limited minimax with state evaluation:
+      - White man:   {BoardEvaluatorBasic1.weightMan}
+      - White King:  {BoardEvaluatorBasic1.weightKing}
+      - Black man:  -{BoardEvaluatorBasic1.weightMan}
+      - Black King: -{BoardEvaluatorBasic1.weightKing}
+"
+            };
+
+            const string bot_minimax_progressive_id = "minimax_progressive";
+            Func<Bot> bot_minimax_progressive = () => new Bot
+            {
+                id = bot_minimax_progressive_id,
+                botFactory = depth => new MinimaxBot(bot_minimax_progressive_id, depth, new BoardEvaluatorProgressive(), null),
+                description = $@"- {bot_minimax_progressive_id}:
+   - Depth-limited minimax with state evaluation:
+      - White man:   2 + 1 - row / (#rows - 1)
       - White King:  5
-      - Black man:  -1
+      - Black man:  -2 - row / (#rows - 1)
       - Black King: -5
+"
+            };
+
+            var netId0 = $"test02/gen120_net0";
+            const string bot_minimax_neural_network0_id = "minimax_neural_network";
+            Func<Bot> bot_minimax_neural_network0 = () => new Bot
+            {
+                id = bot_minimax_neural_network0_id,
+                botFactory = depth => new MinimaxBot(bot_minimax_neural_network0_id, depth, new BoardEvaluatorNeuralNetwork(Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/{netId0}.{Utils.neuralNetworkFileExt}")), null),
+                description = $@"- {bot_minimax_neural_network0_id}:
+   - Depth-limited minimax with state evaluation:
+      - Rated with neural network: {netId0}
+"
+            };
+
+            var netId1 = $"test02/gen0_net0";
+            const string bot_minimax_neural_network1_id = "minimax_neural_network";
+            Func<Bot> bot_minimax_neural_network1 = () => new Bot
+            {
+                id = bot_minimax_neural_network1_id,
+                botFactory = depth => new MinimaxBot(bot_minimax_neural_network1_id, depth, new BoardEvaluatorNeuralNetwork(Utils.LoadNetwork($"{EvolutionaryAlgorithm.folderPath_eva}/{netId1}.{Utils.neuralNetworkFileExt}")), null),
+                description = $@"- {bot_minimax_neural_network1_id}:
+   - Depth-limited minimax with state evaluation:
+      - Rated with neural network: {netId1}
 "
             };
 
             // Choose bots
-            var bot0 = bot_minimax_basic;
-            var bot1 = minimax_basic_depth_2;
+            var bot0 = bot_minimax_basic();
+            var bot1 = bot_minimax_neural_network0();
 
             // Setup game
-            int numberOfGames = 1000;
+            int numberOfGames = 500;
 
             // Setup log
             string simID = $"{bot0.id}_vs_{bot1.id}";
@@ -108,16 +164,16 @@ description = (id) => $@"- {id}:
             using (var sw = new StreamWriter(simFilePath, true))
             {
                 sw.WriteLine("Bots:");
-                sw.Write(bot0.GetDescription());
-                sw.Write(bot1.GetDescription());
-                
+                sw.Write(bot0.description);
+                sw.Write(bot1.description);
+
                 sw.WriteLine();
                 sw.WriteLine($"Number of games per simulation: {numberOfGames}");
                 sw.WriteLine(separator);
             }
 
             // Run
-            for (int i = 1; i < 6; i++)
+            for (int i = 1; i < 5; i++)
             {
                 run($"run{i}", i);
             }
@@ -126,29 +182,17 @@ description = (id) => $@"- {id}:
                 var simOut = SimulateParallel(
                     runID,
                     RulesType.Czech,
-                    bot0.GetBotFactory(depth),
-                    bot1.GetBotFactory(depth),
+                    () => bot0.botFactory(depth),
+                    () => bot1.botFactory(depth),
                     numberOfGames
                 );
                 string message = $"[{runID}] {bot0.id}: {simOut.player0Wins} (w:{simOut.player0WinsWhite} b:{simOut.player0WinsBlack}) | ties: {simOut.ties} | {bot1.id}: {simOut.player1Wins} (w:{simOut.player1WinsWhite} b:{simOut.player1WinsBlack})";
                 Console.WriteLine(message);
                 using (var sw = new StreamWriter(simFilePath, true))
                 {
-                    sw.WriteLine($"Run: {runID}");
+                    sw.WriteLine($"Run: {runID}, Depth: {depth}");
 
-                    sw.WriteLine($"Settings:");
-                    sw.WriteLine($" - depth: {depth}");
-
-                    sw.WriteLine($"Score:");
-                    sw.WriteLine($" - Bot '{bot0.id}' wins: {simOut.player0Wins}");
-                    sw.WriteLine($"    - white: {simOut.player0WinsWhite}");
-                    sw.WriteLine($"    - black: {simOut.player0WinsBlack}");
-
-                    sw.WriteLine($" - Ties: {simOut.ties}");
-
-                    sw.WriteLine($" - Bot '{bot1.id}' wins: {simOut.player1Wins}");
-                    sw.WriteLine($"    - white: {simOut.player1WinsWhite}");
-                    sw.WriteLine($"    - black: {simOut.player1WinsBlack}");
+                    sw.WriteLine($"Score: '{bot0.id}' wins: {simOut.player0Wins} (w: {simOut.player0WinsWhite}, b: {simOut.player0WinsBlack}) | Ties: {simOut.ties} | '{bot1.id}' wins: {simOut.player1Wins} (w: {simOut.player1WinsWhite}, b: {simOut.player1WinsBlack})");
 
                     sw.WriteLine(separator);
                 }
@@ -161,14 +205,11 @@ description = (id) => $@"- {id}:
             }
         }
 
-        private class Bot
+        private struct Bot
         {
             public string id;
-            public Func<string, int, Player> botFactory; // id, depth, out Player
-            public Func<string, string> description;
-
-            public Func<Player> GetBotFactory(int depth) => () => botFactory(id, depth);
-            public string GetDescription() => description(id);
+            public Func<int, Player> botFactory; // depth, out Player
+            public string description;
         }
 
         public static SimulationOutput SimulateSerial(string simulationID, RulesType rules, Func<Player> bot0Factory, Func<Player> bot1Factory, int numberOfRuns)

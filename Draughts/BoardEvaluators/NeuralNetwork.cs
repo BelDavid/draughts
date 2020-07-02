@@ -112,6 +112,14 @@ namespace Draughts.BoardEvaluators
                 neuronLayout[i + 1] = weights[i].GetLength(1);
             }
         }
+        private NeuralNetwork(int[] neuronLayout, double[][,] weights, RulesType rulesType, ActivationFunctionType[] activationFunctionTypes, ActivationFunctionDelegate[] activationFunctions)
+        {
+            this.neuronLayout = neuronLayout;
+            this.weights = weights;
+            this.rulesType = rulesType;
+            this.activationFunctionTypes = activationFunctionTypes;
+            this.activationFunctions = activationFunctions;
+        }
 
         public double[] Evaluate(double[] input)
         {
@@ -146,6 +154,28 @@ namespace Draughts.BoardEvaluators
             }
 
             return layoutIn;
+        }
+
+        public NeuralNetwork Clone()
+        {
+            var nl = new int[neuronLayout.Length];
+            neuronLayout.CopyTo(nl, 0);
+
+            var w = new double[weights.Length][,];
+            for (int i = 0; i < w.Length; i++)
+            {
+                w[i] = weights[i].Clone() as double[,];
+            }
+
+            var aft = new ActivationFunctionType[activationFunctionTypes.Length];
+            activationFunctionTypes.CopyTo(aft, 0);
+
+            var af = new ActivationFunctionDelegate[activationFunctions.Length];
+            activationFunctions.CopyTo(af, 0);
+
+            var rt = rulesType;
+
+            return new NeuralNetwork(nl, w, rt, aft, af);
         }
 
 

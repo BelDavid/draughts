@@ -11,8 +11,8 @@ namespace Draughts.BoardEvaluators
 {
     public class BoardEvaluatorBasic : IBoardEvaluator
     {
-        public double weightMan = 1d;
-        public double weightKing = 5d;
+        public static double weightMan = 1d;
+        public static double weightKing = 5d;
 
         public double Evaluate(BoardState state)
         {

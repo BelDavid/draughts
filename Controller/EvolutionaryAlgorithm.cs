@@ -29,14 +29,15 @@ namespace Controller
         public readonly RulesType rulesType;
         public readonly int[] neuronLayout;
         public double mutationRate = 1d;
-        public double mutationBitRate = 0.1d;
+        public double mutationBitRate = 0.01d;
+        public double mutationScatter = 1d;
         public double crossoverRate = 0.2d;
         public int populationSize = 30;
         public int numberOfElites = 5;
         public int numberOfGenerations = 10;
         public int numberOfCompetetiveMatches = 50;
 
-        public int minimaxDepth = 3;
+        public int minimaxDepth = 1;
         public bool paralelisedMatches = false;
 
         private readonly string id;
@@ -56,7 +57,7 @@ namespace Controller
             hiddenLayers?.CopyTo(neuronLayout, 1);
 
 
-            folderPath_run = $"{folderPath_eva}/run_{id}";
+            folderPath_run = $"{folderPath_eva}/{id}";
             if (!Directory.Exists(folderPath_eva))
             {
                 throw new ArgumentException($"Root folder for Evolutionary Algorithms output not set");
@@ -65,26 +66,13 @@ namespace Controller
             {
                 throw new ArgumentException($"ID {id} already used.");
             }
-
-            Directory.CreateDirectory(folderPath_run);
-            using (var sw = new StreamWriter($"{folderPath_run}/settings.txt"))
-            {
-                sw.WriteLine($"id={id}");
-                sw.WriteLine($"rulesType={Enum.GetName(typeof(RulesType), rulesType)}");
-                sw.WriteLine($"neuronLayout=[{string.Join(",", neuronLayout)}]"); 
-                sw.WriteLine($"mutationRate={mutationRate}"); 
-                sw.WriteLine($"mutationBitRate={mutationBitRate}");
-                sw.WriteLine($"crossoverRate={crossoverRate}");
-                sw.WriteLine($"populationSize={populationSize}");
-                sw.WriteLine($"numberOfElites={numberOfElites}");
-                sw.WriteLine($"minimaxDepth={minimaxDepth}");
-                sw.WriteLine($"numberOfCompetetiveMatches={numberOfCompetetiveMatches}");
-            }
         }
 
 
         public List<NNFit> Run()
         {
+            WriteSettings();
+
             var startingPopulation = new List<NeuralNetwork>(populationSize + numberOfElites);
             for (int i = 0; i < populationSize; i++)
             {
@@ -103,6 +91,25 @@ namespace Controller
             return generation;
         }
 
+        private void WriteSettings()
+        {
+            Directory.CreateDirectory(folderPath_run);
+            using (var sw = new StreamWriter($"{folderPath_run}/settings.txt"))
+            {
+                sw.WriteLine($"id={id}");
+                sw.WriteLine($"rulesType={Enum.GetName(typeof(RulesType), rulesType)}");
+                sw.WriteLine($"neuronLayout=[{string.Join(",", neuronLayout)}]");
+                sw.WriteLine($"mutationRate={mutationRate}");
+                sw.WriteLine($"mutationBitRate={mutationBitRate}");
+                sw.WriteLine($"mutationScatter={mutationScatter}");
+                sw.WriteLine($"crossoverRate={crossoverRate}");
+                sw.WriteLine($"populationSize={populationSize}");
+                sw.WriteLine($"numberOfElites={numberOfElites}");
+                sw.WriteLine($"minimaxDepth={minimaxDepth}");
+                sw.WriteLine($"numberOfCompetetiveMatches={numberOfCompetetiveMatches}");
+            }
+        }
+
         public List<NNFit> GetNextGen(List<NNFit> currGen)
         {
             // SELECT
@@ -110,11 +117,11 @@ namespace Controller
 
             // ELITISM | Fittest entities goes automatically to mating pool
             var elites = Math.Min(numberOfElites, populationSize);
+            matingPool.RemoveRange(currGen.Count - elites, elites);
             for (int i = 0; i < elites; i++)
             {
-                matingPool.Add(currGen[i].neuralNetwork);
+                matingPool.Add(currGen[i].neuralNetwork.Clone());
             }
-            matingPool.RemoveRange(currGen.Count, elites);
 
             // CROSSOVER
             for (int j = 0; j + 1 < matingPool.Count; j += 2)
@@ -151,7 +158,7 @@ namespace Controller
                 {
                     for (int k = 0; k < nn.weights[i].GetLength(1); k++)
                     {
-                        nn.weights[i][j, k] = Utils.rand.NextGaussian(1d, 1d);
+                        nn.weights[i][j, k] = Utils.rand.NextGaussian(1d, .2d);
                     }
                 }
             }
@@ -167,7 +174,8 @@ namespace Controller
                 wheelSums[i] = sum += population[i].fitness;
 
             var matingPool = new NeuralNetwork[population.Count];
-            Parallel.For(0, population.Count, (i) => {
+            for (int i = 0; i < population.Count; i++)
+            {
                 double r = Utils.rand.NextDouble() * sum;
                 int j = 0;
                 while (wheelSums[j] < r)
@@ -175,7 +183,12 @@ namespace Controller
                     j++;
                 }
                 matingPool[i] = population[j].neuralNetwork;
-            });
+            }
+
+            for (int i = 0; i < matingPool.Length; i++)
+            {
+                matingPool[i] = matingPool[i].Clone();
+            }
 
             return matingPool.ToList();
         }
@@ -220,7 +233,7 @@ namespace Controller
                     for (int k = 0; k < a.weights[i].GetLength(1); k++)
                     {
                         if (Utils.rand.NextDouble() < mutationBitRate)
-                            a.weights[i][j, k] += Utils.rand.NextGaussian();
+                            a.weights[i][j, k] += Utils.rand.NextGaussian(0d, mutationScatter);
                     }
                 }
             }
@@ -292,7 +305,7 @@ namespace Controller
                 for (int i = 0; i < generation.Count; i++)
                 {
                     var stats = generation[i].gameStats;
-                    sw.WriteLine($"net{i} - wins: (w:{stats.player0WinsWhite} b:{stats.player0WinsBlack}) | ties: {stats.ties} | loses: (w:{stats.player0LosesWhite} b:{stats.player0LosesBlack})");
+                    sw.WriteLine($"net{i} - wins: {stats.player0Wins} (w:{stats.player0WinsWhite} b:{stats.player0WinsBlack}) | ties: {stats.ties} | loses: {stats.player0Loses} (w:{stats.player0LosesWhite} b:{stats.player0LosesBlack})");
                 }
 
                 sw.WriteLine("----------------------------------------------------------------");

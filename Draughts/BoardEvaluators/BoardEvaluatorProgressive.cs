@@ -23,7 +23,7 @@ namespace Draughts.BoardEvaluators
                     if (Utils.GetRank(pieceType) == PieceRank.Man)
                     {
                         f = 2;
-                        var p = 1 / (state.NumberOfRows - 1);
+                        var p = pos.row / (state.NumberOfRows - 1);
                         
                         f += Utils.GetColor(pieceType) == PieceColor.White ? 1-p
                            : Utils.GetColor(pieceType) == PieceColor.Black ? p
