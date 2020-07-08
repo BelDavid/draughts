@@ -35,17 +35,17 @@ namespace Controller
 
         private static void TrainEvA()
         {
-            string evaID = "test04";
-            var eva = new EvolutionaryAlgorithm(evaID, new int[] { }, RulesType.Czech)
+            string evaID = "test06";
+            var eva = new EvolutionaryAlgorithm(evaID, new int[] { 8 }, RulesType.Czech)
             {
                 paralelisedMatches = true,
                 minimaxDepth = 3,
                 numberOfGenerations = 200,
                 populationSize = 50,
                 mutationRate = .2d,
-                mutationBitRate = .1d,
-                mutationScatter = 2d,
-                crossoverRate = 0d,
+                mutationBitRate = .2d,
+                mutationScatter = 4d,
+                crossoverRate = .2d,
                 numberOfCompetetiveMatches = 100,
             };
             var gen = eva.Run();
@@ -120,9 +120,9 @@ namespace Controller
                 botFactory = depth => new MinimaxBot(bot_minimax_progressive_id, depth, new BoardEvaluatorProgressive(), null),
                 description = $@"- {bot_minimax_progressive_id}:
    - Depth-limited minimax with state evaluation:
-      - White man:   2 + 1 - row / (#rows - 1)
+      - White man:   2 + ( (1 - row / (#rows - 1)) - 1)^3 +1)
       - White King:  5
-      - Black man:  -2 - row / (#rows - 1)
+      - Black man:  -2 - ( (    row / (#rows - 1)) - 1)^3 +1)
       - Black King: -5
 "
             };
@@ -153,7 +153,7 @@ namespace Controller
 
             // Choose bots
             var bot0 = bot_minimax_basic();
-            var bot1 = bot_minimax_neural_network0();
+            var bot1 = bot_minimax_progressive();
 
             // Setup game
             int numberOfGames = 500;

@@ -23,11 +23,14 @@ namespace Draughts.BoardEvaluators
                     if (Utils.GetRank(pieceType) == PieceRank.Man)
                     {
                         f = 2;
-                        var p = pos.row / (state.NumberOfRows - 1);
+                        double p = (double)pos.row / (state.NumberOfRows - 1d);
                         
-                        f += Utils.GetColor(pieceType) == PieceColor.White ? 1-p
+                        p = Utils.GetColor(pieceType) == PieceColor.White ? 1-p
                            : Utils.GetColor(pieceType) == PieceColor.Black ? p
                            : 0d;
+
+                        // moving piece from a back position increases fitness more, than moving piece from front positions
+                        f += Math.Pow(p - 1, 3) + 1;
                     }
                     else if (Utils.GetRank(pieceType) == PieceRank.King)
                     {
