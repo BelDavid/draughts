@@ -84,7 +84,6 @@
     <Compile Include="Players\NetworkType.cs" />
     <Compile Include="Players\RandomizedBot.cs" />
     <Compile Include="Players\ReplayBot.cs" />
-    <Compile Include="RandomExtensions.cs" />
     <Compile Include="Rules\CzechRules.cs" />
     <Compile Include="Pieces\PieceRank.cs" />
     <Compile Include="Game\GameControl.cs" />
@@ -93,9 +92,9 @@
     <Compile Include="Pieces\PieceColor.cs" />
     <Compile Include="Players\User.cs" />
     <Compile Include="Position.cs" />
+    <Compile Include="Rules\EnglishRules.cs" />
     <Compile Include="Rules\GameRules.cs" />
     <Compile Include="Rules\RulesType.cs" />
-    <Compile Include="SimulationOutput.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="GUI\Visualiser.cs" />
     <Compile Include="GUI\VisualiserState.cs" />

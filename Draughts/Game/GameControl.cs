@@ -18,7 +18,7 @@ namespace Draughts.Game
 {
     public class GameControl
     {
-        public const int MoveCountLimit = 150;
+        public readonly int MoveCountLimit;
 
         private Visualiser visualiser;
         private readonly Player[] players;
@@ -58,7 +58,7 @@ namespace Draughts.Game
         {
             this.id = id ?? string.Empty;
             this.rules = rules;
-            gameRules = Utils.GetGameRules(rules);
+            gameRules = GameRules.GetGameRules(rules);
 
             players = new Player[] {
                 firstPlayer ?? throw new ArgumentNullException("Argument firstPlayer can not be null"),
@@ -88,6 +88,7 @@ namespace Draughts.Game
             WhitePlayer.Setup(PieceColor.White, rules, this);
             BlackPlayer.Setup(PieceColor.Black, rules, this);
 
+            MoveCountLimit = GameRules.GetMoveLimitForTie(rules);
 
             CurrentBoardState = gameRules.GetInitialBoardState();
             StateHistory.Add(CurrentBoardState);

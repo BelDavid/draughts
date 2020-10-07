@@ -32,15 +32,66 @@ namespace Draughts.Rules
         public abstract BoardState GetInitialBoardState();
         public abstract Pieces.PieceColor GetStartingColor();
 
+
+        public static GameRules GetGameRules(RulesType rules)
+        {
+            switch (rules)
+            {
+                case RulesType.Czech:
+                    return new CzechRules();
+
+                case RulesType.English:
+                    return new EnglishRules();
+
+                default:
+                    throw new Exception("Unsupported rules");
+            }
+        }
+
+
+        public static PieceColor GetStartingPlayer(RulesType rules)
+        {
+            switch (rules)
+            {
+                case RulesType.Czech:
+                    return PieceColor.White;
+
+                case RulesType.English:
+                    return PieceColor.Black;
+
+                default:
+                    throw new Exception("Unsupported rules");
+            }
+        }
+
         public static (byte numberOfColumns, byte numberOfRows) GetBoardDimensions(RulesType rules)
         {
             switch (rules)
             {
                 case RulesType.Czech:
+                case RulesType.English:
                     return (8, 8);
 
                 default:
-                    throw new NotImplementedException();
+                    throw new Exception("Unsupported rules");
+            }
+        }
+
+        /// <summary>
+        /// Returns a limit to a number of moves, when reached, game ends as a tie
+        /// </summary>
+        public static int GetMoveLimitForTie(RulesType rules)
+        {
+            switch (rules)
+            {
+                case RulesType.Czech:
+                    return 150;
+
+                case RulesType.English:
+                    return 200;
+
+                default:
+                    throw new Exception("Unsupported rules");
             }
         }
     }

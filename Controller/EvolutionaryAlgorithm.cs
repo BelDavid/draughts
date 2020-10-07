@@ -37,13 +37,20 @@ namespace Controller
         public int numberOfGenerations = 10;
         public int numberOfCompetetiveMatches = 50;
 
-        public int minimaxDepth = 1;
+        // best network from the generation becomes opponent, if it has fitness greater than (opponentReplaceThreshold * numberOfCompetetiveMatches)
+        // by default turned off by setting the threashold to 1
+        public double opponentReplaceThreshold = 1d;
+
+        public int minimaxDepth = 3;
         public bool paralelisedMatches = false;
 
         private readonly string id;
         private readonly string folderPath_run;
 
         private int genNum = 0;
+
+        private readonly Func<Player> opponentMinimaxBasic, opponentMinimaxProgressive;
+        private Func<Player> currentOpponent;
 
         public EvolutionaryAlgorithm(string id, int[] hiddenLayers, RulesType rulesType)
         {
@@ -66,6 +73,10 @@ namespace Controller
             {
                 throw new ArgumentException($"ID {id} already used.");
             }
+
+            opponentMinimaxBasic = () => new MinimaxBot($"minimax_basic", minimaxDepth, new BoardEvaluatorBasic(), null);
+            opponentMinimaxProgressive = () => new MinimaxBot($"minimax_progressive", minimaxDepth, new BoardEvaluatorProgressive(), null);
+            currentOpponent = opponentMinimaxBasic;
         }
 
 
@@ -97,21 +108,33 @@ namespace Controller
             using (var sw = new StreamWriter($"{folderPath_run}/settings.txt"))
             {
                 sw.WriteLine($"id={id}");
-                sw.WriteLine($"rulesType={Enum.GetName(typeof(RulesType), rulesType)}");
+                sw.WriteLine($"rulesType={rulesType}");
                 sw.WriteLine($"neuronLayout=[{string.Join(",", neuronLayout)}]");
+
                 sw.WriteLine($"mutationRate={mutationRate}");
                 sw.WriteLine($"mutationBitRate={mutationBitRate}");
                 sw.WriteLine($"mutationScatter={mutationScatter}");
                 sw.WriteLine($"crossoverRate={crossoverRate}");
+
                 sw.WriteLine($"populationSize={populationSize}");
+                sw.WriteLine($"numberOfGenerations={numberOfGenerations}");
                 sw.WriteLine($"numberOfElites={numberOfElites}");
+
                 sw.WriteLine($"minimaxDepth={minimaxDepth}");
                 sw.WriteLine($"numberOfCompetetiveMatches={numberOfCompetetiveMatches}");
+                sw.WriteLine($"opponentReplaceThreshold={opponentReplaceThreshold}");
             }
         }
 
         public List<NNFit> GetNextGen(List<NNFit> currGen)
         {
+            if (currGen[0].fitness > opponentReplaceThreshold * numberOfCompetetiveMatches || (genNum == 1 && opponentReplaceThreshold < 1))
+            {
+                var nn = currGen[0].neuralNetwork.Clone();
+                string oppID = $"{id}/gen{genNum - 1}_net0";
+                currentOpponent = () => new MinimaxBot(oppID, minimaxDepth, new BoardEvaluatorNeuralNetwork(nn), null);
+            }
+
             // SELECT
             var matingPool = SelectRulete(currGen);
 
@@ -251,7 +274,6 @@ namespace Controller
         {
             var nf = new NNFit[networks.Count];
 
-            int depth = minimaxDepth; // (int)((double)genNum * minimaxDepth / numberOfGenerations + 1);
             int done = 0;
             var outputLock = new object();
             Console.Write($"0/{networks.Count}");
@@ -261,8 +283,8 @@ namespace Controller
                 var gameStats = Program.SimulateSerial(
                     $"{id}_gen{genNum}_sim{i}",
                     rulesType,
-                    () => new MinimaxBot($"network", depth, new BoardEvaluatorNeuralNetwork(networks[i]), null),
-                    () => new MinimaxBot($"basic", depth, new BoardEvaluatorBasic(), null),
+                    () => new MinimaxBot($"network", minimaxDepth, new BoardEvaluatorNeuralNetwork(networks[i]), null),
+                    currentOpponent,
                     numberOfCompetetiveMatches
                 );
 
@@ -296,11 +318,14 @@ namespace Controller
 
         private void Report(List<NNFit> generation)
         {
-            Console.WriteLine($"[{id}] gen{genNum} | best: {generation.First().fitness}/{numberOfCompetetiveMatches}");
+            string currentOpponentID = currentOpponent().id;
+
+            Console.WriteLine($"[{id}] gen{genNum} | best: {generation.First().fitness}/{numberOfCompetetiveMatches} (opponent: {currentOpponentID})");
 
             using (var sw = new StreamWriter($"{folderPath_run}/log.txt", true))
             {
                 sw.WriteLine($"Generation: {genNum}");
+                sw.WriteLine($"opponent: {currentOpponentID}");
 
                 for (int i = 0; i < generation.Count; i++)
                 {

@@ -33,17 +33,6 @@ namespace Draughts
         public static PieceColor SwapColor(PieceColor color) => color == PieceColor.None ? PieceColor.None : (PieceColor)(0b_100 | (~(uint)color & 0b_001));
         public static PieceType PromoteToKing(PieceType pieceType) => pieceType != PieceType.None ? (PieceType)((int)pieceType | (int)PieceRank.King) : throw new ArgumentException("can not promote PieceType.None");
 
-        public static GameRules GetGameRules(RulesType rules)
-        {
-            switch (rules)
-            {
-                case RulesType.Czech:
-                    return new CzechRules();
-                default:
-                    throw new Exception("Unsupported rules");
-            }
-        }
-
 
 
         public static NeuralNetwork LoadNetwork(string path)

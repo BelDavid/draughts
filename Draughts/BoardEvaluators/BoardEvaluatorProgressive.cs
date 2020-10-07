@@ -29,7 +29,7 @@ namespace Draughts.BoardEvaluators
                            : Utils.GetColor(pieceType) == PieceColor.Black ? p
                            : 0d;
 
-                        // moving piece from a back position increases fitness more, than moving piece from front positions
+                        // (p - 1)^3 + 1
                         f += Math.Pow(p - 1, 3) + 1;
                     }
                     else if (Utils.GetRank(pieceType) == PieceRank.King)

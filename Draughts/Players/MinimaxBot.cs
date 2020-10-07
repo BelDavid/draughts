@@ -45,8 +45,8 @@ namespace Draughts.Players
             expandedStates.Push(boardState);
 
             var fitmove = Search(boardState, 0, ref progress, 100d, new Dictionary<BoardState, FitMove>(), expandedStates, null);
-            //System.Diagnostics.Debug.WriteLine($"progressBar = {progress}");
-            //System.Diagnostics.Debug.WriteLine($"fit = {fitmove.fit}");
+            //Debug.WriteLine($"progressBar = {progress}");
+            //Debug.WriteLine($"fit = {fitmove.fit}");
 
             return fitmove.move;
         }

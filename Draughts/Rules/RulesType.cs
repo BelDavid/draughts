@@ -10,5 +10,6 @@ namespace Draughts.Rules
     public enum RulesType
     {
         Czech,
+        English,
     }
 }

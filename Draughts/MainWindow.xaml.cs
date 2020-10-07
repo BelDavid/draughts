@@ -135,6 +135,12 @@ namespace Draughts
 
                     case BoardEvaluatorType.NeuralNetwork:
                         var nn = Utils.LoadNetwork(selector.neuralNetworkFilePath);
+                        if (nn.rulesType != selector.rules)
+                        {
+                            MessageBox.Show($"Loaded network is not designed for this type of rules.\n{selector.rules} rules are selected, but network is designed for {nn.rulesType} rules.", "Rules missmatch");
+                            return;
+                        }
+
                         if (nn != null)
                         {
                             evaluator = new BoardEvaluatorNeuralNetwork(nn);
@@ -160,7 +166,11 @@ namespace Draughts
                         break;
 
                     case BotDifficulty.Medium:
-                        bot = new MinimaxBot("minimax7", 7, evaluator, progressbar_bot, true, true);
+                        bot = new MinimaxBot("minimax6", 6, evaluator, progressbar_bot, true, true);
+                        break;
+
+                    case BotDifficulty.Hard:
+                        bot = new MinimaxBot("minimax9", 9, evaluator, progressbar_bot, true, true);
                         break;
 #if DEBUG
                     case BotDifficulty.Depth10:
@@ -170,11 +180,13 @@ namespace Draughts
                     default:
                         throw new NotImplementedException();
                 }
-                
-                Player whitePlayer = selector.color == PieceColor.White ? user : bot;
-                Player blackPlayer = selector.color == PieceColor.White ? bot : user;
 
-                gameControl = new GameControl("user_vs_bot", selector.rules, whitePlayer, blackPlayer);
+                var startingColor = GameRules.GetStartingPlayer(selector.rules);
+
+                Player firstPlayer = selector.color == startingColor ? user : bot;
+                Player secondPlayer = selector.color == startingColor ? bot : user;
+
+                gameControl = new GameControl("user_vs_bot", selector.rules, firstPlayer, secondPlayer);
                 visualiser = gameControl.GetVisualiser(this);
 
                 // TODO change window title

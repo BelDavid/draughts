@@ -17,7 +17,6 @@ namespace Draughts.Rules
        * Pieces stay on the field until jumping sequence (JS) is finished
        * One piece can not be jumped over more than once
        * Promoting to king ends player's move
-       * When only few kings are present and players doesn't seem to be able to catch one another, game ends with tie
        * Jumping is mandatory; JS done with king has priority before JS done with man; JS must be finished
        * King can jump to any place behind a piece, if none of those places lead to more jumping
       */

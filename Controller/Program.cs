@@ -26,7 +26,7 @@ namespace Controller
 
         static void Main(string[] args)
         {
-            //TrainEvA();
+            // TrainEvA();
             RunSimulation();
 
             Console.Write("Press Enter to exit..."); 
@@ -35,18 +35,19 @@ namespace Controller
 
         private static void TrainEvA()
         {
-            string evaID = "test06";
+            string evaID = "evoluce07";
             var eva = new EvolutionaryAlgorithm(evaID, new int[] { 8 }, RulesType.Czech)
             {
                 paralelisedMatches = true,
                 minimaxDepth = 3,
-                numberOfGenerations = 200,
-                populationSize = 50,
+                numberOfGenerations = 100,
+                populationSize = 20,
                 mutationRate = .2d,
-                mutationBitRate = .2d,
-                mutationScatter = 4d,
+                mutationBitRate = .05d,
+                mutationScatter = 2d,
                 crossoverRate = .2d,
                 numberOfCompetetiveMatches = 100,
+                opponentReplaceThreshold = 1d,
             };
             var gen = eva.Run();
         }
@@ -85,13 +86,13 @@ namespace Controller
 "
             };
 
-            const string bot_minimax_basic_depth_2_id = "minimax_basic_depth=2";
-            Func<Bot> bot_minimax_basic_depth_2 = () => new Bot
+            const string bot_minimax_basic_depth_3_id = "minimax_basic_depth=3";
+            Func<Bot> bot_minimax_basic_depth_3 = () => new Bot
             {
-                id = bot_minimax_basic_depth_2_id,
-                botFactory = _ => new MinimaxBot(bot_minimax_basic_depth_2_id, 2, new BoardEvaluatorBasic(), null),
-                description = $@"- {bot_minimax_basic_depth_2_id}:
-   - Depth-limited minimax with state evaluation and depth fixed at 2:
+                id = bot_minimax_basic_depth_3_id,
+                botFactory = _ => new MinimaxBot(bot_minimax_basic_depth_3_id, 3, new BoardEvaluatorBasic(), null),
+                description = $@"- {bot_minimax_basic_depth_3_id}:
+   - Depth-limited minimax with state evaluation and depth fixed at 3:
       - White man:   {BoardEvaluatorBasic.weightMan}
       - White King:  {BoardEvaluatorBasic.weightKing}
       - Black man:  -{BoardEvaluatorBasic.weightMan}
@@ -127,8 +128,8 @@ namespace Controller
 "
             };
 
-            var netId0 = $"test02/gen120_net0";
-            const string bot_minimax_neural_network0_id = "minimax_neural_network";
+            var netId0 = $"evoluce01/gen19_net0";
+            const string bot_minimax_neural_network0_id = "minimax_neural_network0";
             Func<Bot> bot_minimax_neural_network0 = () => new Bot
             {
                 id = bot_minimax_neural_network0_id,
@@ -139,8 +140,8 @@ namespace Controller
 "
             };
 
-            var netId1 = $"test02/gen0_net0";
-            const string bot_minimax_neural_network1_id = "minimax_neural_network";
+            var netId1 = $"evoluce07/gen99_net0";
+            const string bot_minimax_neural_network1_id = "minimax_neural_network1";
             Func<Bot> bot_minimax_neural_network1 = () => new Bot
             {
                 id = bot_minimax_neural_network1_id,
@@ -151,29 +152,34 @@ namespace Controller
 "
             };
 
+
             // Choose bots
-            var bot0 = bot_minimax_basic();
-            var bot1 = bot_minimax_progressive();
+            var bot0 = bot_minimax_neural_network0();
+            var bot1 = bot_minimax_neural_network1();
 
             // Setup game
-            int numberOfGames = 500;
+            int numberOfGames = 1000;
+            var rules = RulesType.Czech;
 
             // Setup log
             string simID = $"{bot0.id}_vs_{bot1.id}";
             string simFilePath = $"{simFolderPath}/{simID}.txt";
             using (var sw = new StreamWriter(simFilePath, true))
             {
+                sw.WriteLine(separator);
                 sw.WriteLine("Bots:");
                 sw.Write(bot0.description);
                 sw.Write(bot1.description);
 
                 sw.WriteLine();
                 sw.WriteLine($"Number of games per simulation: {numberOfGames}");
+                sw.WriteLine($"Rules: {rules}");
                 sw.WriteLine(separator);
             }
 
             // Run
-            for (int i = 1; i < 5; i++)
+            // run($"run4", 4);
+            for (int i = 1; i < 7; i++)
             {
                 run($"run{i}", i);
             }
@@ -181,7 +187,7 @@ namespace Controller
             {
                 var simOut = SimulateParallel(
                     runID,
-                    RulesType.Czech,
+                    rules,
                     () => bot0.botFactory(depth),
                     () => bot1.botFactory(depth),
                     numberOfGames
@@ -201,7 +207,7 @@ namespace Controller
             // Finalise
             using (var sw = new StreamWriter(simFilePath, true))
             {
-                sw.WriteLine(separator);
+                sw.WriteLine("\n\n\n");
             }
         }
 

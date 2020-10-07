@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Draughts
+namespace Controller
 {
     [Serializable]
     public struct SimulationOutput

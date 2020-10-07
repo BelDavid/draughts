@@ -11,6 +11,7 @@ namespace Draughts.Players
         Randomized,
         Easy,
         Medium,
+        Hard,
 
 #if DEBUG
         Depth10,
